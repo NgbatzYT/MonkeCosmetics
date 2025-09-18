@@ -1,5 +1,6 @@
 ﻿using BepInEx;
 using ExitGames.Client.Photon;
+using MonkeCosmetics.Scripts;
 using Photon.Pun;
 using System;
 using System.Collections.Generic;
@@ -12,13 +13,24 @@ namespace MonkeCosmetics
 {
     internal class CustomCosmeticManager : MonoBehaviour
     {
+        public static CustomCosmeticManager instance;
+
         public List<GameObject> Buttons = new List<GameObject>();
         public List<Material> materials = new List<Material>();
         string localplayermeshdir = "Local VRRig/Local Gorilla Player/gorilla_new";
         public Material DFPrisim = null;
         public Material DFmoon = null;
         public Material DFTrans = null;
-        Hashtable LocalCosmetics = new Hashtable();
+        Hashtable LocalCosmetics;
+
+
+        void Awake()
+        {
+            if (instance == null) instance = this; else Destroy(this);
+
+
+            StartAF();
+        }
 
         public static AssetBundle[] LoadAllBundles()
         {
@@ -50,6 +62,10 @@ namespace MonkeCosmetics
 
         public void StartAF()
         {
+            DFmoon = Plugin.Instance.bundle.LoadAsset<Material>("MoonSkin");
+            DFPrisim = Plugin.Instance.bundle.LoadAsset<Material>("PrisimSkin");
+            DFTrans = Plugin.Instance.bundle.LoadAsset<Material>("TransPrisim");
+
             materials.Add(DFmoon);
             materials.Add(DFPrisim);
             materials.Add(DFTrans);
@@ -65,16 +81,15 @@ namespace MonkeCosmetics
                 }
             }
 
-            Buttons.Add(gameObject.transform.Find("LeftButton").gameObject);
-            Buttons.Add(gameObject.transform.Find("RightButton").gameObject);
-            Buttons.Add(gameObject.transform.Find("SelectButton").gameObject);
+            Buttons.Add(transform.Find("LeftButton").gameObject);
+            Buttons.Add(transform.Find("RightButton").gameObject);
+            Buttons.Add(transform.Find("SelectButton").gameObject);
 
-            Buttons[0].AddComponent<CCButton_Left>();
-            Buttons[1].AddComponent<CCButton_Right>();
-            Buttons[2].AddComponent<CCButton_Select>();
-            Buttons[0].layer = 18;
-            Buttons[1].layer = 18;
-            Buttons[2].layer = 18;
+            foreach(GameObject button in Buttons)
+            {
+                button.AddComponent<ButtonHandler>();
+                button.layer = 18;
+            }
 
             LeftArrow();
         }
@@ -89,7 +104,10 @@ namespace MonkeCosmetics
         {
             if (PhotonNetwork.InRoom)
             {
-                LocalCosmetics.Add("MonkeCosmetics::Material", mat.name);
+                LocalCosmetics = new Hashtable
+                {
+                    { "MonkeCosmetics::Material", mat.name }
+                };
                 PhotonNetwork.LocalPlayer.SetCustomProperties(LocalCosmetics);
             }
             GameObject.Find("Player Objects").transform.Find(localplayermeshdir).GetComponent<SkinnedMeshRenderer>().material = mat;

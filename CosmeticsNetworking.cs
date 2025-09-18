@@ -1,10 +1,12 @@
-﻿using ExitGames.Client.Photon;
-using Photon.Pun;
+﻿using Photon.Pun;
 using Photon.Realtime;
 using System;
 using System.Collections.Generic;
 using System.Text;
 using UnityEngine;
+
+using Hashtable = ExitGames.Client.Photon.Hashtable;
+
 #pragma warning disable CS0612 // Type or member is obsolete
 #pragma warning disable CS0618 // Type or member is obsolete
 namespace MonkeCosmetics
@@ -13,18 +15,21 @@ namespace MonkeCosmetics
     {
         string otherplayermeshdir = "gorilla_new";
 
-        Hashtable LocalCosmetics = new Hashtable();
+        Hashtable LocalCosmetics;
+
         public override void OnJoinedLobby()
         {
-            var CCM = GameObject.Find("MatSwitcherStand(Clone)").GetComponent<CustomCosmeticManager>();
-            LocalCosmetics.Add("MonkeCosmetics::Material", CCM.materials[CCM.index].name);
+            var CCM = CustomCosmeticManager.instance;
+            LocalCosmetics = new Hashtable
+            {
+                { "MonkeCosmetics::Material", CCM.materials[CCM.index].name }
+            };
             PhotonNetwork.LocalPlayer.SetCustomProperties(LocalCosmetics);
             base.OnJoinedLobby();
         }
 
         private GameObject FindAvatarByActorNumber(int actorNumber)
         {
-
             PhotonView[] views = FindObjectsOfType<PhotonView>();
             foreach (var v in views)
             {
@@ -40,7 +45,7 @@ namespace MonkeCosmetics
         {
             if (PhotonNetwork.LocalPlayer.ActorNumber == targetPlayer.ActorNumber)
             {
-                Debug.Log("Same Player Found");
+                return;
             }
             else
             {
@@ -49,19 +54,24 @@ namespace MonkeCosmetics
                 if (PlayerModel != null)
                 {
                     string matName = (string)changedProps["MonkeCosmetics::Material"];
-                    var mat = MonkeCosmetics.Plugin.LoadMat(matName);
-                    if (mat != null)
-                    {
-                        PlayerModel.transform.Find(otherplayermeshdir).gameObject.GetComponent<MeshRenderer>().material = mat;
-                    }
-                    else
-                    {
-                        Debug.Log("Did no have other player Material");
-                    }
+
+                    if (string.IsNullOrEmpty(matName)) return;
+                    try 
+                    { 
+                        var mat = Plugin.Instance.bundle.LoadAsset<Material>(matName);
+                        if (mat != null)
+                        {
+                            PlayerModel.transform.Find(otherplayermeshdir).GetComponent<MeshRenderer>().material = mat;
+                        }
+                        else
+                        {
+                            Debug.Log("[MonkeCosmetics] You don't have the other players material.");
+                        }
+                    } catch (Exception e) { Debug.Log("[MonkeCosmetics]" + e); }                  
                 }
                 else
                 {
-                    Debug.LogWarning("Failed to find player object");
+                    Debug.LogWarning("[MonkeCosmetics] Failed to find player object");
                 }
             }
         }
