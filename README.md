@@ -17,7 +17,7 @@ For GorillaCosmetics just put the `.material`/`.gmat` files into the plugins fol
 
 ## Credits
 
-* Ngbatz
-* Chloye
-* EmeryKills
-* Ariel
+* Ngbatz - Head dev
+* Chloye - Made base of the mod
+* EmeryKills - Helped Test a LOT
+* And to all the testers!
