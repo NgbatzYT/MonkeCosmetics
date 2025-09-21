@@ -6,14 +6,12 @@ They will be loaded in but compatibility can't be guaranteed.
 
 This is not intergrated with the wardrobe currently but in the future that may be a possiblity.
 
-
-
-## How to add assets?
-For now building assetbundles and putting it in the same directory as the Dll with the file extention `.MCmat`, This will load *all* of the Materials inside.
+### How to add assets?
+Putting The `.MCmat` file in the plguins folder will load all materials that are in the MCmat file.
 
 Eventually we will switch to a whole different schema but for now this works.
 
-For GorillaCosmetics just put the `.material`/`.gmat` files into the plugins folder and they will load.
+For GorillaCosmetics Materials just put the `.material`/`.gmat` files into the plugins folder and they will load.
 
 ## Credits
 
@@ -21,3 +19,13 @@ For GorillaCosmetics just put the `.material`/`.gmat` files into the plugins fol
 * Chloye - Made base of the mod
 * EmeryKills - Helped Test a LOT
 * And to all the testers!
+
+## For Developers
+
+### Disclaimer
+Try not to name materials the same as others so like add your username or something to it, it just needs to be unique to not cause problems!
+
+### Operator Functions
+All valid special operators are below, you can append these to the end of the material name and it will change what the material does (You can only have one at a time).
+
+`_FollowPlayerColor` or `_FollowPlayerColour`: This makes the materials colour follow the players colour.
