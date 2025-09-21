@@ -1,7 +1,11 @@
-﻿using Photon.Pun;
+﻿using BepInEx.Configuration;
+using GorillaNetworking;
+using Photon.Pun;
 using Photon.Realtime;
 using System;
+using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text;
 using UnityEngine;
 
@@ -13,32 +17,56 @@ namespace MonkeCosmetics
 {
     internal class CosmeticsNetworking : MonoBehaviourPunCallbacks
     {
-        string otherplayermeshdir = "gorilla_new";
-
         Hashtable LocalCosmetics;
+
+        public static CosmeticsNetworking Instance;
+
+        void Start() => Instance = this;
+        
 
         public override void OnJoinedLobby()
         {
             var CCM = CustomCosmeticManager.instance;
-            LocalCosmetics = new Hashtable
+            if (CustomCosmeticManager.instance.currentMaterial != null)
             {
-                { "MonkeCosmetics::Material", CCM.materials[CCM.index].name }
-            };
-            PhotonNetwork.LocalPlayer.SetCustomProperties(LocalCosmetics);
-            base.OnJoinedLobby();
-        }
-
-        private GameObject FindAvatarByActorNumber(int actorNumber)
-        {
-            PhotonView[] views = FindObjectsOfType<PhotonView>();
-            foreach (var v in views)
-            {
-                if (v.Owner != null && v.Owner.ActorNumber == actorNumber)
+                LocalCosmetics = new Hashtable
                 {
-                    return v.gameObject;
+                    { "MonkeCosmetics::Material", CCM.materials[CCM.index].name }
+                };
+                PhotonNetwork.LocalPlayer.SetCustomProperties(LocalCosmetics);
+            }
+            foreach (NetPlayer p in NetworkSystem.Instance.AllNetPlayers)
+            {
+                var e = GorillaGameManager.instance.FindPlayerVRRig(p);
+
+                if (e.isLocal) { continue; }
+
+                if (e.IsTagged()) { continue; }
+
+                var matName = p.GetPlayerRef().CustomProperties["MonkeCosmetics::Material"];
+
+                if (matName == null)
+                {
+                    if (CustomCosmeticManager.instance.currentMaterial == null) continue;
+                    Debug.Log($"[Monke Cosmetics] Setting material for non-monke cosmetics user {p.NickName}");
+                    SetVRRigMaterial(CustomCosmeticManager.instance.currentMaterial, e);
+                }
+                else
+                {
+                    if (!Plugin.Instance.materialSet.Value) continue;
+                    foreach (var mate in CustomCosmeticManager.instance.materials)
+                    {
+                        if (mate.name == (string)matName)
+                        {
+                            Debug.Log($"[Monke Cosmetics] Setting material for {p.NickName}");
+                            SetVRRigMaterial(mate, e);
+                            continue;
+                        }
+                    }
                 }
             }
-            return null;
+
+            base.OnJoinedLobby();
         }
 
         public override void OnPlayerPropertiesUpdate(Player targetPlayer, Hashtable changedProps)
@@ -49,25 +77,34 @@ namespace MonkeCosmetics
             }
             else
             {
-
-                GameObject PlayerModel = FindAvatarByActorNumber(targetPlayer.ActorNumber);
+                VRRig PlayerModel = GorillaGameManager.instance.FindPlayerVRRig(targetPlayer);
                 if (PlayerModel != null)
                 {
+
+                    if (PlayerModel.IsTagged()) { return; }
+
                     string matName = (string)changedProps["MonkeCosmetics::Material"];
 
-                    if (string.IsNullOrEmpty(matName)) return;
-                    try 
-                    { 
-                        var mat = Plugin.Instance.bundle.LoadAsset<Material>(matName);
-                        if (mat != null)
+                    if (string.IsNullOrEmpty(matName))
+                    {
+                        if (!Plugin.Instance.materialSet.Value) return;
+                        SetVRRigMaterial(CustomCosmeticManager.instance.currentMaterial, PlayerModel);
+                        Debug.Log($"[Monke Cosmetics] Setting material for non-monke cosmetics user {targetPlayer.NickName}");
+                        return;
+                    }
+                    try
+                    {
+                        foreach (var mat in CustomCosmeticManager.instance.materials)
                         {
-                            PlayerModel.transform.Find(otherplayermeshdir).GetComponent<MeshRenderer>().material = mat;
+                            if (mat.name == matName)
+                            {
+                                Debug.Log($"[Monke Cosmetics] Setting material for {targetPlayer.NickName}");
+                                SetVRRigMaterial(mat, PlayerModel);
+                                return;
+                            }
                         }
-                        else
-                        {
-                            Debug.Log("[MonkeCosmetics] You don't have the other players material.");
-                        }
-                    } catch (Exception e) { Debug.Log("[MonkeCosmetics]" + e); }                  
+                    }
+                    catch (Exception e) { Debug.Log("[MonkeCosmetics]" + e); }
                 }
                 else
                 {
@@ -76,5 +113,26 @@ namespace MonkeCosmetics
             }
         }
 
+        public void SetVRRigMaterial(Material material, VRRig Rig)
+        {
+            Rig.transform.root.Find("gorilla_new").GetComponent<SkinnedMeshRenderer>().material = material;
+        }
+
+        public void ResetMaterial(VRRig Rig)
+        {
+            Material defaultMaterial = Rig.materialsToChangeTo[0];
+            Rig.InitializeNoobMaterialLocal(defaultMaterial.color.r, defaultMaterial.color.g, defaultMaterial.color.b);
+        }
+    }
+
+    public static class Helpers
+    {
+        public static bool IsTagged(this VRRig rig) // Thanks to HanSolo1000Falcon for providing this
+        {
+            bool isInfectionTagged = rig.setMatIndex == 2 || rig.setMatIndex == 11;
+            bool isRockTagged = rig.setMatIndex == 1;
+
+            return isInfectionTagged || isRockTagged;
+        }
     }
 }

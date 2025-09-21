@@ -1,23 +1,31 @@
 ﻿using BepInEx;
+using BepInEx.Configuration;
 using GorillaExtensions;
 using GorillaNetworking;
 using HarmonyLib;
+using MonkeCosmetics.Scripts;
 using Photon.Pun;
 using System;
 using System.IO;
 using System.Reflection;
-using UnityEngine;
 using TMPro;
+using UnityEngine;
 
 namespace MonkeCosmetics
 {
-    [BepInPlugin("com.gtshady.gorillatag.monkecosmetics", "MonkeCosmetics", "1.0.0")]
+    [BepInPlugin("com.chloye.ngbatz.monkecosmetics", "MonkeCosmetics", "1.0.0")]
     public class Plugin : BaseUnityPlugin
     {
         public static Plugin Instance { get; private set; }
         public AssetBundle bundle;
         public static TextMeshPro MaterialName;
-        public static GameObject MatSwitcherStand { get; private set; }
+        public static GameObject MonkeCosmetics { get; private set; }
+
+        public static GameObject Left;
+        public static GameObject Right;
+        public static GameObject Select;
+
+        public ConfigEntry<bool> materialSet;
 
         void Start() => GorillaTagger.OnPlayerSpawned(OnGameInitialized);
 #if DEBUG
@@ -26,7 +34,7 @@ namespace MonkeCosmetics
 
         void OnGUI()
         {
-            windowRect = GUI.Window(0, windowRect, MakeWindow, "Monke Cosmetics Debug GUI");
+            windowRect = GUI.Window(1, windowRect, MakeWindow, "Monke Cosmetics Debug GUI");
         }
 
         private void MakeWindow(int id)
@@ -48,6 +56,11 @@ namespace MonkeCosmetics
                 CustomCosmeticManager.instance.SelectPress();
             }
 
+            if (GUILayout.Button("Check if tagged"))
+            {
+                Debug.Log($"[Monke Cosmetics] Tagged = {VRRig.LocalRig.IsTagged()}");
+            }
+
             GUI.DragWindow(new Rect(0, 0, windowRect.width, 20));
         }
 #endif
@@ -55,23 +68,29 @@ namespace MonkeCosmetics
 
         void OnGameInitialized()
         {
+            materialSet = Config.Bind("General", "SetMaterialForOthers", false, "If set to true it will set your material to people without the mod otherwise it won't." );
+
             Instance = this;
-
-            var net = new GameObject("MatNet");
-            net.AddComponent<CosmeticsNetworking>();
-
-            Stream stream = Assembly.GetExecutingAssembly().GetManifestResourceStream("MonkeCosmetics.Assets.defaultassets_mc");
+            Stream stream = Assembly.GetExecutingAssembly().GetManifestResourceStream("MonkeCosmetics.Assets.monkecosmetics");
             bundle = AssetBundle.LoadFromStream(stream);
             stream.Close();
-            MatSwitcherStand = Instantiate(bundle.LoadAsset<GameObject>("MatSwitcherStand"));
-            MatSwitcherStand.transform.position = new Vector3(-68.44f, 11.4509f, -81.399f);
-            MatSwitcherStand.transform.localScale = new Vector3(0.1f, 0.1f, 0.1f);
-            MatSwitcherStand.transform.Rotate(0, -80, 0);
-            Destroy(MatSwitcherStand.transform.Find("Cylinder").gameObject);
 
-            MaterialName = MatSwitcherStand.transform.Find("MatName").GetComponent<TextMeshPro>();
+            MonkeCosmetics = Instantiate(bundle.LoadAsset<GameObject>("MonkeCosmetics"));
+            MonkeCosmetics.transform.position = new Vector3(-68.4556f, 11.4509f, -81.399f);
+            MonkeCosmetics.transform.Rotate(0, 10.75f, 0);
 
-            MatSwitcherStand.AddComponent<CustomCosmeticManager>();
+            Select = MonkeCosmetics.transform.Find("Select").gameObject;
+            Left = MonkeCosmetics.transform.Find("Left").gameObject;
+            Right = MonkeCosmetics.transform.Find("Right").gameObject;
+
+            Select.AddComponent<ButtonHandler>();
+            Left.AddComponent<ButtonHandler>();
+            Right.AddComponent<ButtonHandler>();
+
+            MaterialName = MonkeCosmetics.transform.Find("MaterialName").GetComponent<TextMeshPro>();
+
+            MonkeCosmetics.AddComponent<CustomCosmeticManager>();
+            MonkeCosmetics.AddComponent<CosmeticsNetworking>();
         }
     }
 }

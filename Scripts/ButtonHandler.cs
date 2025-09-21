@@ -12,17 +12,16 @@ namespace MonkeCosmetics.Scripts
             base.ButtonActivation();
             switch (gameObject.name)
             {
-                case "LeftButton":
+                case "Left":
                     CustomCosmeticManager.instance.LeftArrow();
                     break;
-                case "RightButton":
+                case "Right":
                     CustomCosmeticManager.instance.RightArrow();
                     break;
-                case "SelectButton":
+                case "Select":
                     CustomCosmeticManager.instance.SelectPress();
                     break;
             }
-            
         }
     }
 }
