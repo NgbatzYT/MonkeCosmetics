@@ -24,6 +24,8 @@ Eventually we will switch to a whole different schema but for now this works.
 * Third build all the assetbundles.
 * Fourth change the extension to `.mcmat` capitilisation doesn't matter and then test and then you can do what you want with it.
 
+If you still can't figure out how to do it you can go to `#material-creation-help` in https://discord.gg/5E2WaaRx5u to get help!
+
 ### Disclaimer
 Try not to name materials the same as others so like add your username or something to it, it just needs to be unique to not cause problems!
 
