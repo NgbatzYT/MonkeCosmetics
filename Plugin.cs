@@ -69,7 +69,7 @@ namespace MonkeCosmetics
 
         void OnGameInitialized()
         {
-            materialSet = Config.Bind("General", "SetMaterialForOthers", false, "If set to true it will set your material to people without the mod otherwise it won't." );
+            materialSet = Config.Bind("General", "SetMaterialForOthers", true, "If set to true it will set your material to people without the mod otherwise it won't." );
 
             Instance = this;
             Stream stream = Assembly.GetExecutingAssembly().GetManifestResourceStream("MonkeCosmetics.Assets.monkecosmetics");
@@ -91,4 +91,5 @@ namespace MonkeCosmetics
             MonkeCosmetics.AddComponent<CosmeticsNetworking>();
         }
     }
+
 }
