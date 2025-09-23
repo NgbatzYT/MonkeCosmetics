@@ -21,6 +21,9 @@ namespace MonkeCosmetics.Scripts
                 case "Select":
                     CustomCosmeticManager.instance.SelectPress();
                     break;
+                case "Remove":
+                    CustomCosmeticManager.instance.RemovePress();
+                    break;
             }
         }
     }

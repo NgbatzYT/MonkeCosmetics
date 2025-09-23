@@ -13,7 +13,7 @@ using UnityEngine;
 
 namespace MonkeCosmetics
 {
-    [BepInPlugin("com.chloye.ngbatz.monkecosmetics", "MonkeCosmetics", "1.0.0")]
+    [BepInPlugin("ngbatz.monkecosmetics", "MonkeCosmetics", "1.0.0")]
     public class Plugin : BaseUnityPlugin
     {
         public static Plugin Instance { get; private set; }
@@ -24,6 +24,7 @@ namespace MonkeCosmetics
         public static GameObject Left;
         public static GameObject Right;
         public static GameObject Select;
+        public static GameObject Remove;
 
         public ConfigEntry<bool> materialSet;
 
@@ -56,9 +57,9 @@ namespace MonkeCosmetics
                 CustomCosmeticManager.instance.SelectPress();
             }
 
-            if (GUILayout.Button("Check if tagged"))
+            if (GUILayout.Button("Remove Material"))
             {
-                Debug.Log($"[Monke Cosmetics] Tagged = {VRRig.LocalRig.IsTagged()}");
+                CustomCosmeticManager.instance.RemovePress();
             }
 
             GUI.DragWindow(new Rect(0, 0, windowRect.width, 20));
@@ -82,10 +83,7 @@ namespace MonkeCosmetics
             Select = MonkeCosmetics.transform.Find("Select").gameObject;
             Left = MonkeCosmetics.transform.Find("Left").gameObject;
             Right = MonkeCosmetics.transform.Find("Right").gameObject;
-
-            Select.AddComponent<ButtonHandler>();
-            Left.AddComponent<ButtonHandler>();
-            Right.AddComponent<ButtonHandler>();
+            Remove = MonkeCosmetics.transform.Find("Remove").gameObject;
 
             MaterialName = MonkeCosmetics.transform.Find("MaterialName").GetComponent<TextMeshPro>();
 

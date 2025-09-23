@@ -5,10 +5,10 @@ using MonkeCosmetics.Scripts;
 using Photon.Pun;
 using System;
 using System.Collections.Generic;
-using System.EnterpriseServices;
 using System.IO;
 using System.Linq;
 using UnityEngine;
+using UnityEngine.Animations.Rigging;
 
 namespace MonkeCosmetics
 {
@@ -25,7 +25,7 @@ namespace MonkeCosmetics
         Hashtable LocalCosmetics;
 
         public Material currentMaterial;
-
+        public string[] specialVariables = { "_followplayercolor", "_followplayercolour" };
 
         void Awake()
         {
@@ -80,19 +80,39 @@ namespace MonkeCosmetics
             Buttons.Add(Plugin.Left);
             Buttons.Add(Plugin.Right);
             Buttons.Add(Plugin.Select);
+            Buttons.Add(Plugin.Remove);
 
             foreach (GameObject button in Buttons)
             {
-                button.GetComponent<SphereCollider>().isTrigger = true;
+                button.AddComponent<ButtonHandler>();
                 button.layer = 18;
             }
 
             LeftArrow();
         }
 
+        public void RemovePress()
+        {
+            if (NetworkSystem.Instance.InRoom)
+            {
+                foreach (NetPlayer p in NetworkSystem.Instance.AllNetPlayers)
+                {
+                    VRRig Rig = GorillaGameManager.instance.FindPlayerVRRig(p);
+                    CosmeticsNetworking.Instance.ResetMaterial(Rig);
+                }
+            }
+            else
+            {
+                currentMaterial = null;
+                GameObject.Find("Player Objects").transform.Find("Local VRRig/Local Gorilla Player/gorilla_new").GetComponent<SkinnedMeshRenderer>().material = VRRig.LocalRig.materialsToChangeTo[0];
+            }
+        }
         public void setMat(Material mat)
         {
-            if (PhotonNetwork.InRoom)
+            if (!NetworkSystem.Instance.InRoom) { GameObject.Find("Player Objects").transform.Find(localplayermeshdir).GetComponent<SkinnedMeshRenderer>().material = mat; }
+            else if (!VRRig.LocalRig.IsTagged()) { GameObject.Find("Player Objects").transform.Find(localplayermeshdir).GetComponent<SkinnedMeshRenderer>().material = mat; }
+
+            if (NetworkSystem.Instance.InRoom)
             {
                 LocalCosmetics = new Hashtable
                 {
@@ -100,48 +120,49 @@ namespace MonkeCosmetics
                 };
                 PhotonNetwork.LocalPlayer.SetCustomProperties(LocalCosmetics);
 
-
-
-                if (!NetworkSystem.Instance.InRoom) { GameObject.Find("Player Objects").transform.Find(localplayermeshdir).GetComponent<SkinnedMeshRenderer>().material = mat; }
-                else if (!VRRig.LocalRig.IsTagged()) { GameObject.Find("Player Objects").transform.Find(localplayermeshdir).GetComponent<SkinnedMeshRenderer>().material = mat; }
                 currentMaterial = mat;
 
+                
                 SetText(mat.name);
-
-                foreach (NetPlayer p in NetworkSystem.Instance.AllNetPlayers) 
+                
+                if (NetworkSystem.Instance.InRoom) 
                 {
-                    var e = GorillaGameManager.instance.FindPlayerVRRig(p);
-
-                    if(e.isLocal) { continue; }
-                    if(e.IsTagged()) { continue; }
-
-                    string matName = (string)p.GetPlayerRef().CustomProperties["MonkeCosmetics::Material"];
-
-                    if (matName == null) 
+                    foreach (NetPlayer p in NetworkSystem.Instance.AllNetPlayers)
                     {
-                        Debug.Log($"[Monke Cosmetics] Setting material for non-monke cosmetics user {p.NickName}");
-                        CosmeticsNetworking.Instance.SetVRRigMaterial(currentMaterial, e);
-                    }
-                    else 
-                    {
-                        
-                        foreach (var mate in materials)
+                        var e = GorillaGameManager.instance.FindPlayerVRRig(p);
+
+                        if (e.isLocal) { continue; }
+                        if (e.IsTagged()) { continue; }
+
+                        string matName = (string)p.GetPlayerRef().CustomProperties["MonkeCosmetics::Material"];
+
+                        if (matName == null)
                         {
-                            if (mate.name == matName)
+                            if (!Plugin.Instance.materialSet.Value) continue;
+                            Debug.Log($"[Monke Cosmetics] Setting material for non-monke cosmetics user {p.NickName}");
+                            CosmeticsNetworking.Instance.SetVRRigMaterial(currentMaterial, e);
+                        }
+                        else
+                        {
+
+                            foreach (var mate in materials)
                             {
-                                Debug.Log($"[Monke Cosmetics] Setting material for {p.NickName}");
-                                CosmeticsNetworking.Instance.SetVRRigMaterial(mate, e);
-                                continue;
+                                if (mate.name == matName)
+                                {
+                                    Debug.Log($"[Monke Cosmetics] Setting material for {p.NickName}");
+                                    CosmeticsNetworking.Instance.SetVRRigMaterial(mate, e);
+                                    continue;
+                                }
                             }
                         }
                     }
                 }
-            }
+            }  
         }
 
         void SetText(string text)
         {
-            string[] specialVariables = { "_playermatdefault", "_followplayercolor", "_playermat" };
+            
 
             var upperText = text.ToUpper();
 
@@ -235,7 +256,6 @@ namespace MonkeCosmetics
         {
             if (!__instance.IsTagged())
                 CustomCosmeticManager.instance.setMat(CustomCosmeticManager.instance.currentMaterial);
-                
         }
     }
 }
