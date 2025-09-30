@@ -1,5 +1,6 @@
 ﻿using BepInEx;
 using BepInEx.Configuration;
+using BepInEx.Logging;
 using System.IO;
 using System.Reflection;
 using TMPro;
@@ -18,6 +19,8 @@ namespace MonkeCosmetics
         public bool Initialize = true;
         public bool Initialized;
 
+        public ManualLogSource manualLogSource;
+
         public static GameObject MonkeCosmetics { get; private set; }
 
         public static GameObject Left;
@@ -30,10 +33,14 @@ namespace MonkeCosmetics
 
         void OnEnable()
         {
-            if (Initialized) {
-                MonkeCosmetics.SetActive(false);
+            if (Initialized)
+            {
+                MonkeCosmetics.SetActive(true);
             }
-            
+            else if (MonkeCosmetics)
+            {
+                MonkeCosmetics.SetActive(true);
+            }
         }
 
         void OnDisable()
@@ -83,7 +90,7 @@ namespace MonkeCosmetics
 
         void OnGameInitialized()
         {
-            materialSet = Config.Bind("General", "SetMaterialForOthers", true, "If set to true it will set your material to people without the mod otherwise it won't." );
+            materialSet = Config.Bind("General", "SetMaterialForOthers", false, "If set to true it will set your material to people without the mod otherwise it won't.");
 
             Instance = this;
             Stream stream = Assembly.GetExecutingAssembly().GetManifestResourceStream("MonkeCosmetics.Assets.monkecosmetics");
@@ -124,19 +131,19 @@ namespace MonkeCosmetics
         public static void Log(string msg)
         {
 #if DEBUG
-            UnityEngine.Debug.Log(msg);
+            Plugin.Instance.manualLogSource.Log(msg);
 #endif
         }
         public static void LogWarning(string msg)
         {
 #if DEBUG
-            UnityEngine.Debug.LogWarning(msg);
+            Plugin.Instance.manualLogSource.LogWarning(msg);
 #endif
         }
         public static void LogError(string msg)
         {
 #if DEBUG
-            UnityEngine.Debug.LogError(msg);
+            Plugin.Instance.manualLogSource.LogError(msg);
 #endif
         }
     }

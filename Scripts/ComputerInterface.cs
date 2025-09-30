@@ -1,13 +1,9 @@
-﻿using BepInEx.Bootstrap;
-using BepInEx.Configuration;
-using ComputerInterface;
+﻿using ComputerInterface;
 using ComputerInterface.Extensions;
 using ComputerInterface.Interfaces;
 using ComputerInterface.ViewLib;
-using HarmonyLib;
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Text;
 
 namespace MonkeCosmetics.Scripts
@@ -25,7 +21,7 @@ namespace MonkeCosmetics.Scripts
             public void Toggle()
             {
                 if (Plugin.Instance.materialSet.Value)
-                { 
+                {
                     Plugin.Instance.SaveMaterialSet(false);
                 }
                 else
@@ -40,7 +36,7 @@ namespace MonkeCosmetics.Scripts
         private readonly UISelectionHandler _selectionHandler;
 
         public ConfigView()
-        { 
+        {
             _plugins = [];
             _plugins.Add(new ConfEntry());
             _selectionHandler = new UISelectionHandler(EKeyboardKey.Up, EKeyboardKey.Down, EKeyboardKey.Enter)

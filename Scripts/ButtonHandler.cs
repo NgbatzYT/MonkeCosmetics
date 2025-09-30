@@ -1,9 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-using UnityEngine;
-
-namespace MonkeCosmetics.Scripts
+﻿namespace MonkeCosmetics.Scripts
 {
     internal class ButtonHandler : GorillaPressableButton
     {

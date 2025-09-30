@@ -14,8 +14,8 @@ namespace MonkeCosmetics
         public static CosmeticsNetworking Instance;
 
         void Start() => Instance = this;
-        
-        
+
+
 
         public override void OnJoinedLobby()
         {
@@ -27,7 +27,7 @@ namespace MonkeCosmetics
                 };
                 PhotonNetwork.LocalPlayer.SetCustomProperties(LocalCosmetics);
             }
-            else 
+            else
             {
                 LocalCosmetics = new Hashtable
                 {
@@ -121,13 +121,13 @@ namespace MonkeCosmetics
         {
             var CCM = CustomCosmeticManager.instance;
             if (CCM.specialVariables.Any(s => string.Equals(s, CCM.CheckText(material.name), StringComparison.OrdinalIgnoreCase))) { material.color = new Color(VRRig.LocalRig.playerColor.r, VRRig.LocalRig.playerColor.g, VRRig.LocalRig.playerColor.b, material.color.a); }
-            
+
             Rig.transform.root.Find("gorilla_new").GetComponent<SkinnedMeshRenderer>().material = material;
         }
 
         public void ResetMaterial(VRRig Rig)
         {
-            
+
             Debug.Log("[Monke Cosmetics] Started to reset material");
             if (Rig.isLocal)
             {
@@ -146,7 +146,7 @@ namespace MonkeCosmetics
             {
                 Rig.transform.root.Find("gorilla_new").GetComponent<SkinnedMeshRenderer>().material = Rig.materialsToChangeTo[Rig.setMatIndex];
                 Debug.Log($"[Monke Cosmetics] Reset material for {Rig.OwningNetPlayer.NickName}");
-            }   
+            }
         }
     }
 

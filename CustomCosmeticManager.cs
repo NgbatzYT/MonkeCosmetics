@@ -103,14 +103,14 @@ namespace MonkeCosmetics
                 GameObject.Find("Player Objects").transform.Find("Local VRRig/Local Gorilla Player/gorilla_new").GetComponent<SkinnedMeshRenderer>().material = VRRig.LocalRig.materialsToChangeTo[0];
             }
         }
-        public void setMat(Material mat)
+        public void SetMaterial(Material mat)
         {
-            if (!NetworkSystem.Instance.InRoom) 
+            if (!NetworkSystem.Instance.InRoom)
             {
                 if (specialVariables.Any(s => string.Equals(s, CheckText(mat.name), StringComparison.OrdinalIgnoreCase))) { mat.color = new Color(VRRig.LocalRig.playerColor.r, VRRig.LocalRig.playerColor.g, VRRig.LocalRig.playerColor.b, mat.color.a); }
                 GameObject.Find("Player Objects").transform.Find(localplayermeshdir).GetComponent<SkinnedMeshRenderer>().material = mat;
             }
-            else if (!VRRig.LocalRig.IsTagged()) 
+            else if (!VRRig.LocalRig.IsTagged())
             {
                 if (specialVariables.Any(s => string.Equals(s, CheckText(mat.name), StringComparison.OrdinalIgnoreCase))) { mat.color = new Color(VRRig.LocalRig.playerColor.r, VRRig.LocalRig.playerColor.g, VRRig.LocalRig.playerColor.b, mat.color.a); }
                 GameObject.Find("Player Objects").transform.Find(localplayermeshdir).GetComponent<SkinnedMeshRenderer>().material = mat;
@@ -126,10 +126,10 @@ namespace MonkeCosmetics
 
                 currentMaterial = mat;
 
-                
+
                 SetText(mat.name);
-                
-                if (NetworkSystem.Instance.InRoom) 
+
+                if (NetworkSystem.Instance.InRoom)
                 {
                     foreach (NetPlayer p in NetworkSystem.Instance.AllNetPlayers)
                     {
@@ -161,7 +161,7 @@ namespace MonkeCosmetics
                         }
                     }
                 }
-            }  
+            }
         }
 
         void SetText(string text)
@@ -220,14 +220,14 @@ namespace MonkeCosmetics
         }
         public void SelectPress()
         {
-            setMat(materials[index]);
+            SetMaterial(materials[index]);
 
             Plugin.Select.GetComponent<MeshRenderer>().material = materials[index];
 
             SetText(materials[index].name);
         }
 
-        void CheckButtonStatus() 
+        void CheckButtonStatus()
         {
             Plugin.Left.SetActive(index > 0);
 
@@ -235,7 +235,7 @@ namespace MonkeCosmetics
 
             Plugin.Left.GetComponent<MeshRenderer>().material = index > 0 ? materials[index - 1] : null;
 
-            Plugin.Right.GetComponent<MeshRenderer>().material =  index < materials.Count - 1 ? materials[index + 1] : null;
+            Plugin.Right.GetComponent<MeshRenderer>().material = index < materials.Count - 1 ? materials[index + 1] : null;
         }
     }
 
@@ -246,7 +246,7 @@ namespace MonkeCosmetics
         private static void Postfix(VRRig __instance)
         {
             if (!__instance.IsTagged())
-                CustomCosmeticManager.instance.setMat(CustomCosmeticManager.instance.currentMaterial);
+                CustomCosmeticManager.instance.SetMaterial(CustomCosmeticManager.instance.currentMaterial);
         }
     }
 }
