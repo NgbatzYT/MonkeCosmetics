@@ -1,18 +1,10 @@
-﻿using BepInEx.Configuration;
-using GorillaNetworking;
-using Photon.Pun;
+﻿using Photon.Pun;
 using Photon.Realtime;
 using System;
-using System.Collections;
-using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using UnityEngine;
-
 using Hashtable = ExitGames.Client.Photon.Hashtable;
 
-#pragma warning disable CS0612 // Type or member is obsolete
-#pragma warning disable CS0618 // Type or member is obsolete
 namespace MonkeCosmetics
 {
     internal class CosmeticsNetworking : MonoBehaviourPunCallbacks
@@ -20,18 +12,13 @@ namespace MonkeCosmetics
         Hashtable LocalCosmetics;
 
         public static CosmeticsNetworking Instance;
-        private Material defaultMaterial;
 
-        void Start() 
-        {
-            defaultMaterial = VRRig.LocalRig.materialsToChangeTo[0];
-            Instance = this;
-        }
+        void Start() => Instance = this;
+        
         
 
         public override void OnJoinedLobby()
         {
-            var CCM = CustomCosmeticManager.instance;
             if (CustomCosmeticManager.instance.currentMaterial != null)
             {
                 LocalCosmetics = new Hashtable
@@ -69,7 +56,7 @@ namespace MonkeCosmetics
                 else
                 {
                     if (!Plugin.Instance.materialSet.Value) continue;
-                    foreach (var mate in CustomCosmeticManager.instance.materials)
+                    foreach (var mate in CustomCosmeticManager.materials)
                     {
                         if (mate.name == (string)matName)
                         {
@@ -111,7 +98,7 @@ namespace MonkeCosmetics
                     }
                     try
                     {
-                        foreach (var mat in CustomCosmeticManager.instance.materials)
+                        foreach (var mat in CustomCosmeticManager.materials)
                         {
                             if (mat.name == matName)
                             {
@@ -133,7 +120,7 @@ namespace MonkeCosmetics
         public void SetVRRigMaterial(Material material, VRRig Rig)
         {
             var CCM = CustomCosmeticManager.instance;
-            if (CCM.specialVariables.Any(s => string.Equals(s, CCM.CheckText(material.name), StringComparison.OrdinalIgnoreCase))) { material.color = VRRig.LocalRig.playerColor; }
+            if (CCM.specialVariables.Any(s => string.Equals(s, CCM.CheckText(material.name), StringComparison.OrdinalIgnoreCase))) { material.color = new Color(VRRig.LocalRig.playerColor.r, VRRig.LocalRig.playerColor.g, VRRig.LocalRig.playerColor.b, material.color.a); }
             
             Rig.transform.root.Find("gorilla_new").GetComponent<SkinnedMeshRenderer>().material = material;
         }
@@ -141,7 +128,7 @@ namespace MonkeCosmetics
         public void ResetMaterial(VRRig Rig)
         {
             
-            Debug.Log("[Monke Cosmetics] Started to reset material i think");
+            Debug.Log("[Monke Cosmetics] Started to reset material");
             if (Rig.isLocal)
             {
                 CustomCosmeticManager.instance.currentMaterial = null;
@@ -152,12 +139,12 @@ namespace MonkeCosmetics
                 };
                 PhotonNetwork.LocalPlayer.SetCustomProperties(LocalCosmetics);
 
-                GameObject.Find("Player Objects").transform.Find("Local VRRig/Local Gorilla Player/gorilla_new").GetComponent<SkinnedMeshRenderer>().material = Rig.materialsToChangeTo[0];
-                Debug.Log($"[Monke Cosmetics] Succesfully reset material i think - CustomProps now are {VRRig.LocalRig}");
+                GameObject.Find("Player Objects").transform.Find("Local VRRig/Local Gorilla Player/gorilla_new").GetComponent<SkinnedMeshRenderer>().material = Rig.materialsToChangeTo[Rig.setMatIndex];
+                Debug.Log($"[Monke Cosmetics] Succesfully reset material");
             }
             else
             {
-                Rig.transform.root.Find("gorilla_new").GetComponent<SkinnedMeshRenderer>().material = Rig.materialsToChangeTo[0];
+                Rig.transform.root.Find("gorilla_new").GetComponent<SkinnedMeshRenderer>().material = Rig.materialsToChangeTo[Rig.setMatIndex];
                 Debug.Log($"[Monke Cosmetics] Reset material for {Rig.OwningNetPlayer.NickName}");
             }   
         }

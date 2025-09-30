@@ -1,11 +1,5 @@
 ﻿using BepInEx;
 using BepInEx.Configuration;
-using GorillaExtensions;
-using GorillaNetworking;
-using HarmonyLib;
-using MonkeCosmetics.Scripts;
-using Photon.Pun;
-using System;
 using System.IO;
 using System.Reflection;
 using TMPro;
@@ -13,12 +7,17 @@ using UnityEngine;
 
 namespace MonkeCosmetics
 {
+    [BepInDependency(ComputerInterface.PluginInfo.Id, BepInDependency.DependencyFlags.SoftDependency)]
     [BepInPlugin("ngbatz.monkecosmetics", "MonkeCosmetics", "1.0.0")]
     public class Plugin : BaseUnityPlugin
     {
         public static Plugin Instance { get; private set; }
         public AssetBundle bundle;
         public static TextMeshPro MaterialName;
+
+        public bool Initialize = true;
+        public bool Initialized;
+
         public static GameObject MonkeCosmetics { get; private set; }
 
         public static GameObject Left;
@@ -27,6 +26,21 @@ namespace MonkeCosmetics
         public static GameObject Remove;
 
         public ConfigEntry<bool> materialSet;
+
+
+        void OnEnable()
+        {
+            if (Initialized) {
+                MonkeCosmetics.SetActive(false);
+            }
+            
+        }
+
+        void OnDisable()
+        {
+            if (Initialized) { MonkeCosmetics.SetActive(false); CosmeticsNetworking.Instance.ResetMaterial(VRRig.LocalRig); }
+            else { Initialize = false; }
+        }
 
         void Start() => GorillaTagger.OnPlayerSpawned(OnGameInitialized);
 #if DEBUG
@@ -89,7 +103,41 @@ namespace MonkeCosmetics
 
             MonkeCosmetics.AddComponent<CustomCosmeticManager>();
             MonkeCosmetics.AddComponent<CosmeticsNetworking>();
+
+            if (!Initialize)
+            {
+                MonkeCosmetics.SetActive(false);
+            }
+
+            Initialized = true;
+        }
+
+        public void SaveMaterialSet(bool value)
+        {
+            materialSet.Value = value;
+            Config.Save();
         }
     }
 
+    public class Debug
+    {
+        public static void Log(string msg)
+        {
+#if DEBUG
+            UnityEngine.Debug.Log(msg);
+#endif
+        }
+        public static void LogWarning(string msg)
+        {
+#if DEBUG
+            UnityEngine.Debug.LogWarning(msg);
+#endif
+        }
+        public static void LogError(string msg)
+        {
+#if DEBUG
+            UnityEngine.Debug.LogError(msg);
+#endif
+        }
+    }
 }

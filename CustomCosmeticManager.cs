@@ -8,7 +8,6 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using UnityEngine;
-using UnityEngine.Animations.Rigging;
 
 namespace MonkeCosmetics
 {
@@ -16,12 +15,9 @@ namespace MonkeCosmetics
     {
         public static CustomCosmeticManager instance;
 
-        public List<GameObject> Buttons = new List<GameObject>();
-        public List<Material> materials = new List<Material>();
+        public List<GameObject> Buttons = [];
+        public static List<Material> materials = [];
         string localplayermeshdir = "Local VRRig/Local Gorilla Player/gorilla_new";
-        public Material DFPrisim = null;
-        public Material DFmoon = null;
-        public Material DFTrans = null;
         Hashtable LocalCosmetics;
 
         public Material currentMaterial;
@@ -31,40 +27,15 @@ namespace MonkeCosmetics
         {
             if (instance == null) instance = this; else Destroy(this);
 
-
             StartAF();
         }
 
-        public static List<AssetBundle> LoadAllBundles()
+        void StartAF()
         {
-            string[] bundlePaths = Directory.GetFiles(Paths.PluginPath, "*.MCmat", SearchOption.AllDirectories);
-
-            List<AssetBundle> bundles = new List<AssetBundle>();
-
-            foreach (string bundlePath in bundlePaths) {
-                try
-                {
-                    bundles.Add(AssetBundle.LoadFromFile(bundlePath));
-                    Debug.Log($"[MonkeCosmetics] Loaded AssetBundle: {Path.GetFileName(bundlePath)}");
-                }
-                catch (Exception ex)
-                {
-                    Debug.LogError($"[MonkeCosmetics] Failed to load bundle {bundlePath}: {ex}");
-                }
-            }
-
-            return bundles;
-        }
-
-        public int index = 0;
-
-        public void StartAF()
-        {
-            foreach(var material in Plugin.Instance.bundle.LoadAllAssets<Material>()) 
+            foreach (var material in Plugin.Instance.bundle.LoadAllAssets<Material>())
             {
                 materials.Add(material);
             }
-
 
             var Bunds = LoadAllBundles();
 
@@ -73,6 +44,7 @@ namespace MonkeCosmetics
                 Material[] Matss = mat.LoadAllAssets<Material>();
                 foreach (var f in Matss)
                 {
+                    f.enableInstancing = true;
                     materials.Add(f);
                 }
             }
@@ -90,6 +62,30 @@ namespace MonkeCosmetics
 
             LeftArrow();
         }
+
+        public static List<AssetBundle> LoadAllBundles()
+        {
+            string[] bundlePaths = Directory.GetFiles(Paths.PluginPath, "*.MCmat", SearchOption.AllDirectories);
+
+            List<AssetBundle> bundles = [];
+
+            foreach (string bundlePath in bundlePaths)
+            {
+                try
+                {
+                    bundles.Add(AssetBundle.LoadFromFile(bundlePath));
+                    Debug.Log($"[MonkeCosmetics] Loaded AssetBundle: {Path.GetFileName(bundlePath)}");
+                }
+                catch (Exception ex)
+                {
+                    Debug.LogError($"[MonkeCosmetics] Failed to load bundle {bundlePath}: {ex}");
+                }
+            }
+
+            return bundles;
+        }
+
+        public int index = 0;
 
         public void RemovePress()
         {
@@ -109,8 +105,16 @@ namespace MonkeCosmetics
         }
         public void setMat(Material mat)
         {
-            if (!NetworkSystem.Instance.InRoom) { GameObject.Find("Player Objects").transform.Find(localplayermeshdir).GetComponent<SkinnedMeshRenderer>().material = mat; }
-            else if (!VRRig.LocalRig.IsTagged()) { GameObject.Find("Player Objects").transform.Find(localplayermeshdir).GetComponent<SkinnedMeshRenderer>().material = mat; }
+            if (!NetworkSystem.Instance.InRoom) 
+            {
+                if (specialVariables.Any(s => string.Equals(s, CheckText(mat.name), StringComparison.OrdinalIgnoreCase))) { mat.color = new Color(VRRig.LocalRig.playerColor.r, VRRig.LocalRig.playerColor.g, VRRig.LocalRig.playerColor.b, mat.color.a); }
+                GameObject.Find("Player Objects").transform.Find(localplayermeshdir).GetComponent<SkinnedMeshRenderer>().material = mat;
+            }
+            else if (!VRRig.LocalRig.IsTagged()) 
+            {
+                if (specialVariables.Any(s => string.Equals(s, CheckText(mat.name), StringComparison.OrdinalIgnoreCase))) { mat.color = new Color(VRRig.LocalRig.playerColor.r, VRRig.LocalRig.playerColor.g, VRRig.LocalRig.playerColor.b, mat.color.a); }
+                GameObject.Find("Player Objects").transform.Find(localplayermeshdir).GetComponent<SkinnedMeshRenderer>().material = mat;
+            }
 
             if (NetworkSystem.Instance.InRoom)
             {
@@ -162,8 +166,6 @@ namespace MonkeCosmetics
 
         void SetText(string text)
         {
-            
-
             var upperText = text.ToUpper();
 
             string match = specialVariables.FirstOrDefault(k => upperText.Contains(k, StringComparison.OrdinalIgnoreCase));
@@ -227,32 +229,21 @@ namespace MonkeCosmetics
 
         void CheckButtonStatus() 
         {
-            var l = Plugin.Left.GetComponent<MeshRenderer>();
-            var r = Plugin.Right.GetComponent<MeshRenderer>();
+            Plugin.Left.SetActive(index > 0);
 
-            if (index - 1 != -1)
-            {
-                Plugin.Left.SetActive(true);
-                l.material = materials[index - 1];
-            }
-            else
-                Plugin.Left.SetActive(false);
+            Plugin.Right.SetActive(index < materials.Count - 1);
 
+            Plugin.Left.GetComponent<MeshRenderer>().material = index > 0 ? materials[index - 1] : null;
 
-            if (index + 1 != materials.Count)
-            {
-                Plugin.Right.SetActive(true);
-                r.material = materials[index + 1];
-            }
-            else
-                Plugin.Right.SetActive(false);
+            Plugin.Right.GetComponent<MeshRenderer>().material =  index < materials.Count - 1 ? materials[index + 1] : null;
         }
     }
 
     [HarmonyPatch(typeof(VRRig), nameof(VRRig.ChangeMaterialLocal))]
-    public class TagCheck
+    public static class TagCheck
     {
-        private static void PostFix(VRRig __instance)
+        [HarmonyPostfix]
+        private static void Postfix(VRRig __instance)
         {
             if (!__instance.IsTagged())
                 CustomCosmeticManager.instance.setMat(CustomCosmeticManager.instance.currentMaterial);
