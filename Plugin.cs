@@ -8,7 +8,6 @@ using UnityEngine;
 
 namespace MonkeCosmetics
 {
-    [BepInDependency(ComputerInterface.PluginInfo.Id, BepInDependency.DependencyFlags.SoftDependency)]
     [BepInPlugin("ngbatz.monkecosmetics", "MonkeCosmetics", "1.0.1")]
     public class Plugin : BaseUnityPlugin
     {
