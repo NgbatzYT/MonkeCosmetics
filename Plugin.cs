@@ -30,29 +30,10 @@ namespace MonkeCosmetics
 
         public ConfigEntry<bool> materialSet;
 
-
-        void OnEnable()
-        {
-            if (Initialized)
-            {
-                MonkeCosmetics.SetActive(true);
-            }
-            else if (MonkeCosmetics)
-            {
-                MonkeCosmetics.SetActive(true);
-            }
-        }
-
-        void OnDisable()
-        {
-            if (Initialized) { MonkeCosmetics.SetActive(false); CosmeticsNetworking.Instance.ResetMaterial(VRRig.LocalRig); }
-            else { Initialize = false; }
-        }
-
         void Start() => GorillaTagger.OnPlayerSpawned(OnGameInitialized);
 #if DEBUG
 
-        private Rect windowRect = new Rect(20, 20, 220, 200);
+        private Rect windowRect = new(20, 20, 220, 200);
 
         void OnGUI()
         {
