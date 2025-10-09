@@ -169,7 +169,7 @@ namespace MonkeCosmetics
 
         public void RightArrow()
         {
-            if (index < materials.Count)
+            if (index < materials.Count - 1)
                 index += 1;
 
             Plugin.Select.GetComponent<MeshRenderer>().material = materials[index];
@@ -195,7 +195,7 @@ namespace MonkeCosmetics
 
             Plugin.Left.GetComponent<MeshRenderer>().material = index > 0 ? materials[index - 1] : null;
 
-            Plugin.Right.GetComponent<MeshRenderer>().material = index < materials.Count ? materials[index + 1] : null;
+            Plugin.Right.GetComponent<MeshRenderer>().material = index < materials.Count - 1 ? materials[index + 1] : null;
         }
     }
 
