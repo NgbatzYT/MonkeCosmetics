@@ -18,7 +18,7 @@ Eventually we will switch to a whole different schema but for now this works.
 
 ### How to add materials
 > You should already have a slight understanding of how to use unity and building assetbundles doing this.
-* First download this https://github.com/NgbatzYT/MonkeCosmeticsUnityProj/archive/refs/heads/main.zip extract and open in unity.
+* First download this https://github.com/NgbatzYT/MonkeCosmeticsUnityProj/archive/refs/heads/main.zip extract and open in unity 6000.
 * Second create a material and make it how you want, I recommend changing the tiling to about 5 if you have a texture or to your liking as it will appear different in-game.
 * Third add it to an assetbundle by clicking on the material looking at the bottom and selecting assetbundle and creating a new assetbundle name.
 * Fourth go to the tools tab at the top and select build all materials.
