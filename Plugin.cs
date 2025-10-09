@@ -15,8 +15,6 @@ namespace MonkeCosmetics
         public AssetBundle bundle;
         public static TextMeshPro MaterialName;
 
-        public bool Initialize = true;
-        public bool Initialized;
 
         public ManualLogSource manualLogSource;
 
@@ -70,33 +68,30 @@ namespace MonkeCosmetics
 
         void OnGameInitialized()
         {
+            // idk
             materialSet = Config.Bind("General", "SetMaterialForOthers", false, "If set to true it will set your material to people without the mod otherwise it won't.");
-
             Instance = this;
+
+            // Asset Loading
             Stream stream = Assembly.GetExecutingAssembly().GetManifestResourceStream("MonkeCosmetics.Assets.monkecosmetics");
             bundle = AssetBundle.LoadFromStream(stream);
             stream.Close();
-
             MonkeCosmetics = Instantiate(bundle.LoadAsset<GameObject>("MonkeCosmetics"));
+
+            // Positioning
             MonkeCosmetics.transform.position = new Vector3(-68.4556f, 11.4509f, -81.399f);
             MonkeCosmetics.transform.Rotate(0, 10.75f, 0);
 
+            // Grabing Objects
             Select = MonkeCosmetics.transform.Find("Select").gameObject;
             Left = MonkeCosmetics.transform.Find("Left").gameObject;
             Right = MonkeCosmetics.transform.Find("Right").gameObject;
             Remove = MonkeCosmetics.transform.Find("Remove").gameObject;
-
             MaterialName = MonkeCosmetics.transform.Find("MaterialName").GetComponent<TextMeshPro>();
 
+            // Adding Components
             MonkeCosmetics.AddComponent<CustomCosmeticManager>();
             MonkeCosmetics.AddComponent<CosmeticsNetworking>();
-
-            if (!Initialize)
-            {
-                MonkeCosmetics.SetActive(false);
-            }
-
-            Initialized = true;
         }
 
         public void SaveMaterialSet(bool value)

@@ -15,8 +15,6 @@ namespace MonkeCosmetics
 
         void Start() => Instance = this;
 
-
-
         public override void OnJoinedLobby()
         {
             if (CustomCosmeticManager.instance.currentMaterial != null)
@@ -38,82 +36,57 @@ namespace MonkeCosmetics
 
             foreach (NetPlayer p in NetworkSystem.Instance.AllNetPlayers)
             {
-                var e = GorillaGameManager.instance.FindPlayerVRRig(p);
-
-                if (e.isLocal) { continue; }
-
-                if (e.IsTagged()) { continue; }
-
-                var matName = p.GetPlayerRef().CustomProperties["MonkeCosmetics::Material"];
-
-                if (matName == null)
-                {
-                    if (CustomCosmeticManager.instance.currentMaterial == null) continue;
-                    if (!Plugin.Instance.materialSet.Value) continue;
-                    Debug.Log($"[Monke Cosmetics] Setting material for non-monke cosmetics user {p.NickName}");
-                    SetVRRigMaterial(CustomCosmeticManager.instance.currentMaterial, e);
-                }
-                else
-                {
-                    if (!Plugin.Instance.materialSet.Value) continue;
-                    foreach (var mate in CustomCosmeticManager.materials)
-                    {
-                        if (mate.name == (string)matName)
-                        {
-                            Debug.Log($"[Monke Cosmetics] Setting material for {p.NickName}");
-                            SetVRRigMaterial(mate, e);
-                            continue;
-                        }
-                    }
-                }
+                NetworkMaterial(p, p.GetPlayerRef().CustomProperties);
             }
 
             base.OnJoinedLobby();
         }
 
-        public override void OnPlayerPropertiesUpdate(Player targetPlayer, Hashtable changedProps)
+        public void NetworkMaterial(NetPlayer player, Hashtable changedProps = null)
         {
-            if (PhotonNetwork.LocalPlayer.ActorNumber == targetPlayer.ActorNumber)
+            VRRig PlayerModel = GorillaGameManager.instance.FindPlayerVRRig(player);
+            ResetMaterial(PlayerModel);
+            if (PlayerModel != null)
             {
-                return;
+                if (PlayerModel.IsTagged()) { return; }
+
+                string matName = null;
+
+                if (changedProps != null) matName = (string)changedProps["MonkeCosmetics::Material"];
+
+                if (string.IsNullOrEmpty(matName))
+                {
+                    if (CustomCosmeticManager.instance.currentMaterial == null) return;
+                    if (!Plugin.Instance.materialSet.Value) return;
+                    SetVRRigMaterial(CustomCosmeticManager.instance.currentMaterial, PlayerModel);
+                    Debug.Log($"[Monke Cosmetics] Setting material for non-monke cosmetics user {player.NickName}");
+                    return;
+                }
+                try
+                {
+                    foreach (var mat in CustomCosmeticManager.materials)
+                    {
+                        if (mat.name == matName)
+                        {
+                            Debug.Log($"[Monke Cosmetics] Setting material for {player.NickName}");
+                            SetVRRigMaterial(mat, PlayerModel);
+                            return;
+                        }
+                    }
+                }
+                catch (Exception e) { UnityEngine.Debug.Log("[MonkeCosmetics]" + e); }
             }
             else
             {
-                VRRig PlayerModel = GorillaGameManager.instance.FindPlayerVRRig(targetPlayer);
-                ResetMaterial(PlayerModel);
-                if (PlayerModel != null)
-                {
+                Debug.LogWarning("[MonkeCosmetics] Failed to find player object");
+            }
+        }
 
-                    if (PlayerModel.IsTagged()) { return; }
-
-                    string matName = (string)changedProps["MonkeCosmetics::Material"];
-
-                    if (string.IsNullOrEmpty(matName))
-                    {
-                        if (CustomCosmeticManager.instance.currentMaterial == null) return;
-                        if (!Plugin.Instance.materialSet.Value) return;
-                        SetVRRigMaterial(CustomCosmeticManager.instance.currentMaterial, PlayerModel);
-                        Debug.Log($"[Monke Cosmetics] Setting material for non-monke cosmetics user {targetPlayer.NickName}");
-                        return;
-                    }
-                    try
-                    {
-                        foreach (var mat in CustomCosmeticManager.materials)
-                        {
-                            if (mat.name == matName)
-                            {
-                                Debug.Log($"[Monke Cosmetics] Setting material for {targetPlayer.NickName}");
-                                SetVRRigMaterial(mat, PlayerModel);
-                                return;
-                            }
-                        }
-                    }
-                    catch (Exception e) { Debug.Log("[MonkeCosmetics]" + e); }
-                }
-                else
-                {
-                    Debug.LogWarning("[MonkeCosmetics] Failed to find player object");
-                }
+        public override void OnPlayerPropertiesUpdate(Player targetPlayer, Hashtable changedProps)
+        {
+            if (PhotonNetwork.LocalPlayer.ActorNumber != targetPlayer.ActorNumber)
+            {
+                NetworkMaterial(targetPlayer, changedProps);
             }
         }
 
@@ -127,25 +100,17 @@ namespace MonkeCosmetics
 
         public void ResetMaterial(VRRig Rig)
         {
-
-            Debug.Log("[Monke Cosmetics] Started to reset material");
             if (Rig.isLocal)
             {
                 CustomCosmeticManager.instance.currentMaterial = null;
 
-                LocalCosmetics = new Hashtable
-                {
-                    { "MonkeCosmetics::Material", null }
-                };
-                PhotonNetwork.LocalPlayer.SetCustomProperties(LocalCosmetics);
+                PhotonNetwork.LocalPlayer.SetCustomProperties(new Hashtable { { "MonkeCosmetics::Material", null } });
 
                 GameObject.Find("Player Objects").transform.Find("Local VRRig/Local Gorilla Player/gorilla_new").GetComponent<SkinnedMeshRenderer>().material = Rig.materialsToChangeTo[Rig.setMatIndex];
-                Debug.Log($"[Monke Cosmetics] Succesfully reset material");
             }
             else
             {
                 Rig.transform.root.Find("gorilla_new").GetComponent<SkinnedMeshRenderer>().material = Rig.materialsToChangeTo[Rig.setMatIndex];
-                Debug.Log($"[Monke Cosmetics] Reset material for {Rig.OwningNetPlayer.NickName}");
             }
         }
     }
