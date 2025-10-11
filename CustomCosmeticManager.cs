@@ -21,7 +21,7 @@ namespace MonkeCosmetics
         Hashtable LocalCosmetics;
 
         public Material currentMaterial;
-        public string[] specialVariables = ["_followplayercolor", "_followplayercolour"];
+        public string[] specialVariables = { "_followplayercolor", "_followplayercolour" };
 
         void Awake()
         {
@@ -44,11 +44,14 @@ namespace MonkeCosmetics
                 Material[] Matss = mat.LoadAllAssets<Material>();
                 foreach (var f in Matss)
                 {
-                    f.enableInstancing = true;
                     materials.Add(f);
                 }
             }
-            Buttons.AddRange([Plugin.Left, Plugin.Right, Plugin.Select, Plugin.Remove]);
+
+            Buttons.Add(Plugin.Left);
+            Buttons.Add(Plugin.Right);
+            Buttons.Add(Plugin.Select);
+            Buttons.Add(Plugin.Remove);
 
             foreach (GameObject button in Buttons)
             {
@@ -56,8 +59,7 @@ namespace MonkeCosmetics
                 button.layer = 18;
             }
 
-            CheckButtonStatus();
-            SetText(materials[index].name);
+            LeftArrow();
         }
 
         public static List<AssetBundle> LoadAllBundles()
@@ -126,9 +128,37 @@ namespace MonkeCosmetics
 
                 SetText(mat.name);
 
-                foreach (NetPlayer p in NetworkSystem.Instance.AllNetPlayers)
+                if (NetworkSystem.Instance.InRoom)
                 {
-                    CosmeticsNetworking.Instance.NetworkMaterial(p, p.GetPlayerRef().CustomProperties);
+                    foreach (NetPlayer p in NetworkSystem.Instance.AllNetPlayers)
+                    {
+                        var e = GorillaGameManager.instance.FindPlayerVRRig(p);
+
+                        if (e.isLocal) { continue; }
+                        if (e.IsTagged()) { continue; }
+
+                        string matName = (string)p.GetPlayerRef().CustomProperties["MonkeCosmetics::Material"];
+
+                        if (matName == null)
+                        {
+                            if (!Plugin.Instance.materialSet.Value) continue;
+                            Debug.Log($"[Monke Cosmetics] Setting material for non-monke cosmetics user {p.NickName}");
+                            CosmeticsNetworking.Instance.SetVRRigMaterial(currentMaterial, e);
+                        }
+                        else
+                        {
+
+                            foreach (var mate in materials)
+                            {
+                                if (mate.name == matName)
+                                {
+                                    Debug.Log($"[Monke Cosmetics] Setting material for {p.NickName}");
+                                    CosmeticsNetworking.Instance.SetVRRigMaterial(mate, e);
+                                    continue;
+                                }
+                            }
+                        }
+                    }
                 }
             }
         }
@@ -152,8 +182,17 @@ namespace MonkeCosmetics
 
         public string CheckText(string text)
         {
+            string[] specialVariables = { "_playermatdefault", "_followplayercolor", "_playermat" };
+
             string match = specialVariables.FirstOrDefault(k => text.Contains(k, StringComparison.OrdinalIgnoreCase));
-            return string.IsNullOrEmpty(match) ? null : match;
+            if (!String.IsNullOrEmpty(match))
+            {
+                return match;
+            }
+            else
+            {
+                return null;
+            }
         }
 
         public void LeftArrow()
@@ -169,7 +208,7 @@ namespace MonkeCosmetics
 
         public void RightArrow()
         {
-            if (index < materials.Count - 1)
+            if (index != materials.Count - 1)
                 index += 1;
 
             Plugin.Select.GetComponent<MeshRenderer>().material = materials[index];
@@ -191,22 +230,11 @@ namespace MonkeCosmetics
         {
             Plugin.Left.SetActive(index > 0);
 
-            Plugin.Right.SetActive(index < materials.Count);
+            Plugin.Right.SetActive(index < materials.Count - 1);
 
             Plugin.Left.GetComponent<MeshRenderer>().material = index > 0 ? materials[index - 1] : null;
 
             Plugin.Right.GetComponent<MeshRenderer>().material = index < materials.Count - 1 ? materials[index + 1] : null;
-        }
-    }
-
-    [HarmonyPatch(typeof(VRRig), nameof(VRRig.ChangeMaterialLocal))]
-    public static class TagCheck
-    {
-        [HarmonyPostfix]
-        private static void Postfix(VRRig __instance)
-        {
-            if (!__instance.IsTagged())
-                CustomCosmeticManager.instance.SetMaterial(CustomCosmeticManager.instance.currentMaterial);
         }
     }
 }

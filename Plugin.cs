@@ -1,6 +1,7 @@
 ﻿using BepInEx;
 using BepInEx.Configuration;
 using BepInEx.Logging;
+using HarmonyLib;
 using System.IO;
 using System.Reflection;
 using TMPro;
@@ -27,7 +28,11 @@ namespace MonkeCosmetics
 
         public ConfigEntry<bool> materialSet;
 
-        void Start() => GorillaTagger.OnPlayerSpawned(OnGameInitialized);
+        void Start() 
+        {
+            Harmony.CreateAndPatchAll(GetType().Assembly, "ngbatz.monkecosmetics");
+            GorillaTagger.OnPlayerSpawned(OnGameInitialized);
+        } 
 #if DEBUG
 
         private Rect windowRect = new(20, 20, 220, 200);
