@@ -1,6 +1,5 @@
 ﻿using BepInEx;
 using ExitGames.Client.Photon;
-using HarmonyLib;
 using MonkeCosmetics.Scripts;
 using Photon.Pun;
 using System;
@@ -17,11 +16,13 @@ namespace MonkeCosmetics
 
         public List<GameObject> Buttons = [];
         public static List<Material> materials = [];
-        string localplayermeshdir = "Local VRRig/Local Gorilla Player/gorilla_new";
+
         Hashtable LocalCosmetics;
 
         public Material currentMaterial;
         public string[] specialVariables = { "_followplayercolor", "_followplayercolour" };
+
+        private SkinnedMeshRenderer localMesh;
 
         void Awake()
         {
@@ -32,26 +33,16 @@ namespace MonkeCosmetics
 
         void StartAF()
         {
-            foreach (var material in Plugin.Instance.bundle.LoadAllAssets<Material>())
-            {
-                materials.Add(material);
-            }
+            materials.AddRange(Plugin.Instance.bundle.LoadAllAssets<Material>());
 
             var Bunds = LoadAllBundles();
 
             foreach (var mat in Bunds)
             {
-                Material[] Matss = mat.LoadAllAssets<Material>();
-                foreach (var f in Matss)
-                {
-                    materials.Add(f);
-                }
+                materials.AddRange(mat.LoadAllAssets<Material>());
             }
 
-            Buttons.Add(Plugin.Left);
-            Buttons.Add(Plugin.Right);
-            Buttons.Add(Plugin.Select);
-            Buttons.Add(Plugin.Remove);
+            Buttons.AddRange([Plugin.Left, Plugin.Right, Plugin.Select, Plugin.Remove]);
 
             foreach (GameObject button in Buttons)
             {
@@ -59,16 +50,16 @@ namespace MonkeCosmetics
                 button.layer = 18;
             }
 
+            localMesh = GameObject.Find("Player Objects")?.transform.Find("Local VRRig/Local Gorilla Player/gorilla_new").GetComponent<SkinnedMeshRenderer>();
+
             LeftArrow();
         }
 
         public static List<AssetBundle> LoadAllBundles()
         {
-            string[] bundlePaths = Directory.GetFiles(Paths.PluginPath, "*.MCmat", SearchOption.AllDirectories);
-
             List<AssetBundle> bundles = [];
 
-            foreach (string bundlePath in bundlePaths)
+            foreach (string bundlePath in Directory.GetFiles(Paths.PluginPath, "*.MCmat", SearchOption.AllDirectories))
             {
                 try
                 {
@@ -90,73 +81,69 @@ namespace MonkeCosmetics
         {
             if (NetworkSystem.Instance.InRoom)
             {
-                foreach (NetPlayer p in NetworkSystem.Instance.AllNetPlayers)
+                foreach (VRRig p in GorillaParent.instance.vrrigs)
                 {
-                    VRRig Rig = GorillaGameManager.instance.FindPlayerVRRig(p);
-                    CosmeticsNetworking.Instance.ResetMaterial(Rig);
+                    CosmeticsNetworking.Instance.ResetMaterial(p);
                 }
             }
             else
             {
                 currentMaterial = null;
-                GameObject.Find("Player Objects").transform.Find("Local VRRig/Local Gorilla Player/gorilla_new").GetComponent<SkinnedMeshRenderer>().material = VRRig.LocalRig.materialsToChangeTo[0];
+                localMesh.material = VRRig.LocalRig.materialsToChangeTo[0];
             }
         }
+
+        private bool IsSpecial(string name)
+        {
+            return specialVariables.Any(s => string.Equals(s, CheckText(name), StringComparison.OrdinalIgnoreCase));
+        }
+
         public void SetMaterial(Material mat)
         {
-            if (!NetworkSystem.Instance.InRoom)
+            if (IsSpecial(mat.name))
             {
-                if (specialVariables.Any(s => string.Equals(s, CheckText(mat.name), StringComparison.OrdinalIgnoreCase))) { mat.color = new Color(VRRig.LocalRig.playerColor.r, VRRig.LocalRig.playerColor.g, VRRig.LocalRig.playerColor.b, mat.color.a); }
-                GameObject.Find("Player Objects").transform.Find(localplayermeshdir).GetComponent<SkinnedMeshRenderer>().material = mat;
+                var c = VRRig.LocalRig.playerColor;
+                mat.color = new Color(c.r, c.g, c.b, mat.color.a);
             }
-            else if (!VRRig.LocalRig.IsTagged())
-            {
-                if (specialVariables.Any(s => string.Equals(s, CheckText(mat.name), StringComparison.OrdinalIgnoreCase))) { mat.color = new Color(VRRig.LocalRig.playerColor.r, VRRig.LocalRig.playerColor.g, VRRig.LocalRig.playerColor.b, mat.color.a); }
-                GameObject.Find("Player Objects").transform.Find(localplayermeshdir).GetComponent<SkinnedMeshRenderer>().material = mat;
-            }
+
+            if(!NetworkSystem.Instance.InRoom || !VRRig.LocalRig.IsTagged()) localMesh.material = mat;
+
+            if (NetworkSystem.Instance.InRoom)
+                NetworkMaterial(mat);
+            
+        }
+
+        void NetworkMaterial(Material mat)
+        {
+            LocalCosmetics = new Hashtable { { "MonkeCosmetics::Material", mat.name } };
+            PhotonNetwork.LocalPlayer.SetCustomProperties(LocalCosmetics);
+
+            currentMaterial = mat;
+
+
+            SetText(mat.name);
 
             if (NetworkSystem.Instance.InRoom)
             {
-                LocalCosmetics = new Hashtable
+                foreach (VRRig e in GorillaParent.instance.vrrigs)
                 {
-                    { "MonkeCosmetics::Material", mat.name }
-                };
-                PhotonNetwork.LocalPlayer.SetCustomProperties(LocalCosmetics);
+                    if (e.isLocal || e.IsTagged()) { continue; }
 
-                currentMaterial = mat;
-
-
-                SetText(mat.name);
-
-                if (NetworkSystem.Instance.InRoom)
-                {
-                    foreach (NetPlayer p in NetworkSystem.Instance.AllNetPlayers)
+                    if (e.Creator?.GetPlayerRef().CustomProperties["MonkeCosmetics::Material"] is not string matName)
                     {
-                        var e = GorillaGameManager.instance.FindPlayerVRRig(p);
+                        if (!Plugin.Instance.materialSet.Value) continue;
+                        Debug.Log($"[Monke Cosmetics] Setting material for non-monke cosmetics user {e.Creator?.NickName}");
+                        CosmeticsNetworking.Instance.SetVRRigMaterial(currentMaterial, e);
+                        continue;
+                    }
 
-                        if (e.isLocal) { continue; }
-                        if (e.IsTagged()) { continue; }
-
-                        string matName = (string)p.GetPlayerRef().CustomProperties["MonkeCosmetics::Material"];
-
-                        if (matName == null)
+                    foreach (var mate in materials)
+                    {
+                        if (mate.name == matName)
                         {
-                            if (!Plugin.Instance.materialSet.Value) continue;
-                            Debug.Log($"[Monke Cosmetics] Setting material for non-monke cosmetics user {p.NickName}");
-                            CosmeticsNetworking.Instance.SetVRRigMaterial(currentMaterial, e);
-                        }
-                        else
-                        {
-
-                            foreach (var mate in materials)
-                            {
-                                if (mate.name == matName)
-                                {
-                                    Debug.Log($"[Monke Cosmetics] Setting material for {p.NickName}");
-                                    CosmeticsNetworking.Instance.SetVRRigMaterial(mate, e);
-                                    continue;
-                                }
-                            }
+                            Debug.Log($"[Monke Cosmetics] Setting material for {e.Creator?.NickName}");
+                            CosmeticsNetworking.Instance.SetVRRigMaterial(mate, e);
+                            continue;
                         }
                     }
                 }
@@ -171,7 +158,6 @@ namespace MonkeCosmetics
             if (!String.IsNullOrEmpty(match))
             {
                 var e = upperText.Replace(match, "", StringComparison.OrdinalIgnoreCase);
-
                 Plugin.MaterialName.text = e;
             }
             else
@@ -182,7 +168,7 @@ namespace MonkeCosmetics
 
         public string CheckText(string text)
         {
-            string[] specialVariables = { "_playermatdefault", "_followplayercolor", "_playermat" };
+            string[] specialVariables = { "_followplayercolour", "_followplayercolor" };
 
             string match = specialVariables.FirstOrDefault(k => text.Contains(k, StringComparison.OrdinalIgnoreCase));
             if (!String.IsNullOrEmpty(match))

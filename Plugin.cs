@@ -2,6 +2,7 @@
 using BepInEx.Configuration;
 using BepInEx.Logging;
 using HarmonyLib;
+using MonkeCosmetics.Scripts;
 using System.IO;
 using System.Reflection;
 using TMPro;
@@ -33,43 +34,6 @@ namespace MonkeCosmetics
             Harmony.CreateAndPatchAll(GetType().Assembly, "ngbatz.monkecosmetics");
             GorillaTagger.OnPlayerSpawned(OnGameInitialized);
         } 
-#if DEBUG
-
-        private Rect windowRect = new(20, 20, 220, 200);
-
-        void OnGUI()
-        {
-            windowRect = GUI.Window(1, windowRect, MakeWindow, "Monke Cosmetics Debug GUI");
-        }
-
-        private void MakeWindow(int id)
-        {
-            GUILayout.Space(10);
-
-            if (GUILayout.Button("Next"))
-            {
-                CustomCosmeticManager.instance.RightArrow();
-            }
-
-            if (GUILayout.Button("Previous"))
-            {
-                CustomCosmeticManager.instance.LeftArrow();
-            }
-
-            if (GUILayout.Button("Select"))
-            {
-                CustomCosmeticManager.instance.SelectPress();
-            }
-
-            if (GUILayout.Button("Remove Material"))
-            {
-                CustomCosmeticManager.instance.RemovePress();
-            }
-
-            GUI.DragWindow(new Rect(0, 0, windowRect.width, 20));
-        }
-#endif
-
 
         void OnGameInitialized()
         {
@@ -77,17 +41,17 @@ namespace MonkeCosmetics
             materialSet = Config.Bind("General", "SetMaterialForOthers", false, "If set to true it will set your material to people without the mod otherwise it won't.");
             Instance = this;
 
-            // Asset Loading
+            // Asset Loading 
             Stream stream = Assembly.GetExecutingAssembly().GetManifestResourceStream("MonkeCosmetics.Assets.monkecosmetics");
             bundle = AssetBundle.LoadFromStream(stream);
             stream.Close();
             MonkeCosmetics = Instantiate(bundle.LoadAsset<GameObject>("MonkeCosmetics"));
 
             // Positioning
-            MonkeCosmetics.transform.position = new Vector3(-68.4556f, 11.4509f, -81.399f);
+            MonkeCosmetics.transform.position = new Vector3(-68.4556f, 13.4509f, -81.399f);
             MonkeCosmetics.transform.Rotate(0, 10.75f, 0);
 
-            // Grabing Objects
+            // Grabbing Objects
             Select = MonkeCosmetics.transform.Find("Select").gameObject;
             Left = MonkeCosmetics.transform.Find("Left").gameObject;
             Right = MonkeCosmetics.transform.Find("Right").gameObject;
@@ -99,11 +63,6 @@ namespace MonkeCosmetics
             MonkeCosmetics.AddComponent<CosmeticsNetworking>();
         }
 
-        public void SaveMaterialSet(bool value)
-        {
-            materialSet.Value = value;
-            Config.Save();
-        }
     }
 
     public class Debug
