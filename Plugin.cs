@@ -2,7 +2,6 @@
 using BepInEx.Configuration;
 using BepInEx.Logging;
 using HarmonyLib;
-using MonkeCosmetics.Scripts;
 using System.IO;
 using System.Reflection;
 using TMPro;
@@ -16,7 +15,6 @@ namespace MonkeCosmetics
         public static Plugin Instance { get; private set; }
         public AssetBundle bundle;
         public static TextMeshPro MaterialName;
-
 
         public ManualLogSource manualLogSource;
 
@@ -48,8 +46,9 @@ namespace MonkeCosmetics
             MonkeCosmetics = Instantiate(bundle.LoadAsset<GameObject>("MonkeCosmetics"));
 
             // Positioning
-            MonkeCosmetics.transform.position = new Vector3(-68.4556f, 13.4509f, -81.399f);
-            MonkeCosmetics.transform.Rotate(0, 10.75f, 0);
+            MonkeCosmetics.transform.position = new Vector3(-64.6257f, 12.0509f, -84.5489f);
+            MonkeCosmetics.transform.Rotate(0, 180f, 0);
+            MonkeCosmetics.transform.localScale = new Vector3(2, 2, 2);
 
             // Grabbing Objects
             Select = MonkeCosmetics.transform.Find("Select").gameObject;
@@ -62,7 +61,6 @@ namespace MonkeCosmetics
             MonkeCosmetics.AddComponent<CustomCosmeticManager>();
             MonkeCosmetics.AddComponent<CosmeticsNetworking>();
         }
-
     }
 
     public class Debug

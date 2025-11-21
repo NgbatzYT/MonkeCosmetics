@@ -100,6 +100,8 @@ namespace MonkeCosmetics
 
         public void SetMaterial(Material mat)
         {
+            if (mat == null) return;
+
             if (IsSpecial(mat.name))
             {
                 var c = VRRig.LocalRig.playerColor;
