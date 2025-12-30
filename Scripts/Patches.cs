@@ -3,6 +3,7 @@
 
 namespace MonkeCosmetics.Scripts
 {
+    [HarmonyWrapSafe]
     [HarmonyPatch(typeof(VRRig), nameof(VRRig.ChangeMaterialLocal))]
     public class MatCheckPatch
     {
@@ -12,7 +13,7 @@ namespace MonkeCosmetics.Scripts
             CustomCosmeticManager.instance.SetMaterial(CustomCosmeticManager.instance.currentMaterial);
         }
     }
-
+    [HarmonyWrapSafe]
     [HarmonyPatch(typeof(VRRig), nameof(VRRig.InitializeNoobMaterialLocal))]
     public class InitializeNoobMaterial
     {
@@ -22,7 +23,7 @@ namespace MonkeCosmetics.Scripts
             CustomCosmeticManager.instance.SetMaterial(CustomCosmeticManager.instance.currentMaterial);
         }
     }
-
+    [HarmonyWrapSafe]
     [HarmonyPatch(typeof(VRRig), nameof(VRRig.InitializeNoobMaterial))]
     public class InitializeNoobMaterialr
     {
@@ -32,7 +33,7 @@ namespace MonkeCosmetics.Scripts
             CustomCosmeticManager.instance.SetMaterial(CustomCosmeticManager.instance.currentMaterial);
         }
     }
-
+    [HarmonyWrapSafe]
     [HarmonyPatch(typeof(VRRig), nameof(VRRig.ChangeMaterial))]
     public class MatCheckPatchr
     {
