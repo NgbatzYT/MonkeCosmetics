@@ -9,7 +9,7 @@ using UnityEngine;
 
 namespace MonkeCosmetics
 {
-    [BepInPlugin("ngbatz.monkecosmetics", "MonkeCosmetics", "1.0.2")]
+    [BepInPlugin("ngbatz.monkecosmetics", "MonkeCosmetics", "1.0.3")]
     public class Plugin : BaseUnityPlugin
     {
         public static Plugin Instance { get; private set; }
