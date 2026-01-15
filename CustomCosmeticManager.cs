@@ -114,6 +114,8 @@ namespace MonkeCosmetics
             SetDisplay(Plugin.H2, Plugin.E2, GetMaterial(baseIndex + 1));
             SetDisplay(Plugin.H3, Plugin.E3, GetMaterial(baseIndex + 2));
 
+            
+
             UpdateState();
         }
 
@@ -185,6 +187,9 @@ namespace MonkeCosmetics
         public void SetMaterial(Material mat)
         {
             if (mat == null) return;
+
+            Plugin.H4.GetComponent<Renderer>().material = mat;
+            currentMaterial = mat;
 
             if (IsSpecial(mat.name))
             {

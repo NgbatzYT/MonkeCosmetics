@@ -29,8 +29,11 @@ namespace MonkeCosmetics
         public static GameObject H1;
         public static GameObject H2;
         public static GameObject H3;
+        public static GameObject H4;
 
         public ConfigEntry<bool> materialSet;
+
+        ControllerInputPoller c;
 
         void Start() 
         {
@@ -64,12 +67,37 @@ namespace MonkeCosmetics
             H1 = MonkeCosmetics.transform.Find("head1").gameObject;
             H2 = MonkeCosmetics.transform.Find("head2").gameObject;
             H3 = MonkeCosmetics.transform.Find("head3").gameObject;
+            H4 = MonkeCosmetics.transform.Find("headmaster").gameObject;
             MonkeCosmetics.transform.Find("Material").gameObject.SetActive(false);
             MonkeCosmetics.transform.Find("Hats").gameObject.SetActive(false);
 
             // Adding Components
             MonkeCosmetics.AddComponent<CustomCosmeticManager>();
             MonkeCosmetics.AddComponent<CosmeticsNetworking>();
+        }
+
+        bool funBool;
+
+        void Update()
+        {
+            if (Instance == null) return;
+
+            if (c == null) { c = ControllerInputPoller.instance; return; } 
+
+            bool pressed = c.leftControllerPrimaryButton && c.rightControllerPrimaryButton;
+
+            if (pressed && !funBool)
+            {
+                var mat = CustomCosmeticManager.instance.currentMaterial;
+                if (mat != null)
+                    CustomCosmeticManager.instance.SetMaterial(mat);
+
+                funBool = true;
+            }
+            else if (!pressed && funBool)
+            {
+                funBool = false;
+            }
         }
     }
 
