@@ -25,6 +25,10 @@
                 case "Remove":
                     CustomCosmeticManager.instance.RemovePress();
                     break;
+                case "Hats":
+                    break;
+                case "Material":
+                    break;
             }
         }
     }

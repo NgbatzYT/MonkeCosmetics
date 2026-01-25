@@ -9,7 +9,7 @@ using UnityEngine;
 
 namespace MonkeCosmetics
 {
-    [BepInPlugin("ngbatz.monkecosmetics", "MonkeCosmetics", "1.0.3")]
+    [BepInPlugin("ngbatz.monkecosmetics", "MonkeCosmetics", "1.0.4")]
     public class Plugin : BaseUnityPlugin
     {
         public static Plugin Instance { get; private set; }
@@ -29,9 +29,12 @@ namespace MonkeCosmetics
         public static GameObject H1;
         public static GameObject H2;
         public static GameObject H3;
+        public static GameObject MAT;
+        public static GameObject HAT;
         public static GameObject H4;
 
         public ConfigEntry<bool> materialSet;
+        public ConfigEntry<bool> network;
 
         ControllerInputPoller c;
 
@@ -45,12 +48,13 @@ namespace MonkeCosmetics
         {
             // idk
             materialSet = Config.Bind("General", "SetMaterialForOthers", false, "If set to true it will set your material to people without the mod otherwise it won't.");
+            network = Config.Bind("General", "DisableNetworking", true, "If set to true it will disable all networking.");
             Instance = this;
 
             // Asset Loading 
             Stream stream = Assembly.GetExecutingAssembly().GetManifestResourceStream("MonkeCosmetics.Assets.monkecosmetics");
             bundle = AssetBundle.LoadFromStream(stream);
-            stream.Close();
+            stream?.Close();
             MonkeCosmetics = Instantiate(bundle.LoadAsset<GameObject>("MonkeCosmetics"));
 
             // Positioning
@@ -68,6 +72,8 @@ namespace MonkeCosmetics
             H2 = MonkeCosmetics.transform.Find("head2").gameObject;
             H3 = MonkeCosmetics.transform.Find("head3").gameObject;
             H4 = MonkeCosmetics.transform.Find("headmaster").gameObject;
+            MAT = MonkeCosmetics.transform.Find("Material").gameObject;
+            HAT = MonkeCosmetics.transform.Find("Hats").gameObject;
             MonkeCosmetics.transform.Find("Material").gameObject.SetActive(false);
             MonkeCosmetics.transform.Find("Hats").gameObject.SetActive(false);
 
@@ -76,9 +82,9 @@ namespace MonkeCosmetics
             MonkeCosmetics.AddComponent<CosmeticsNetworking>();
         }
 
-        bool funBool;
+        private bool funBool;
 
-        void Update()
+        private void Update()
         {
             if (Instance == null) return;
 
@@ -86,17 +92,20 @@ namespace MonkeCosmetics
 
             bool pressed = c.leftControllerPrimaryButton && c.rightControllerPrimaryButton;
 
-            if (pressed && !funBool)
+            switch (pressed)
             {
-                var mat = CustomCosmeticManager.instance.currentMaterial;
-                if (mat != null)
-                    CustomCosmeticManager.instance.SetMaterial(mat);
+                case true when !funBool:
+                {
+                    Material mat = CustomCosmeticManager.instance.currentMaterial;
+                    if (mat != null)
+                        CustomCosmeticManager.instance.SetMaterial(mat);
 
-                funBool = true;
-            }
-            else if (!pressed && funBool)
-            {
-                funBool = false;
+                    funBool = true;
+                    break;
+                }
+                case false when funBool:
+                    funBool = false;
+                    break;
             }
         }
     }

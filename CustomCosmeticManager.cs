@@ -17,7 +17,6 @@ namespace MonkeCosmetics
         public static List<Material> materials = [];
 
         private SkinnedMeshRenderer localMesh;
-        private Hashtable LocalCosmetics;
 
         public Material currentMaterial;
 
@@ -28,6 +27,8 @@ namespace MonkeCosmetics
         private int pageIndex = 0;
         private const int pageSize = 3;
 
+        public Hashtable LocalCosmetics { get; private set; }
+
         void Awake()
         {
             if (instance == null) instance = this;
@@ -36,7 +37,7 @@ namespace MonkeCosmetics
             StartAF();
         }
 
-        void StartAF()
+        private void StartAF()
         {
             materials.AddRange(Plugin.Instance.bundle.LoadAllAssets<Material>());
             Plugin.Instance.bundle.Unload(false);
@@ -48,7 +49,7 @@ namespace MonkeCosmetics
 
                 bundle.Unload(false);
             }
-                
+
 
             localMesh = GameObject.Find("Player Objects")?.transform.Find("Local VRRig/Local Gorilla Player/gorilla_new").GetComponent<SkinnedMeshRenderer>();
 
@@ -60,24 +61,17 @@ namespace MonkeCosmetics
                 button.layer = 18;
             }
 
-
             UpdateDisplays();
         }
 
         public string CheckText(string text)
         {
-            string[] specialVariables = ["_followplayercolour", "_followplayercolor"];
+            string match = specialVariables.FirstOrDefault(k => text.Contains(k, StringComparison.OrdinalIgnoreCase));
 
-            string match = specialVariables.FirstOrDefault(k =>
-                text.Contains(k, StringComparison.OrdinalIgnoreCase));
-
-            if (!String.IsNullOrEmpty(match))
-                return match;
-            else
-                return null;
+            return !string.IsNullOrEmpty(match) ? match : null;
         }
 
-        public static List<AssetBundle> LoadAllBundles()
+        private static List<AssetBundle> LoadAllBundles()
         {
             List<AssetBundle> bundles = [];
 
@@ -114,7 +108,7 @@ namespace MonkeCosmetics
             SetDisplay(Plugin.H2, Plugin.E2, GetMaterial(baseIndex + 1));
             SetDisplay(Plugin.H3, Plugin.E3, GetMaterial(baseIndex + 2));
 
-            
+
 
             UpdateState();
         }
@@ -171,16 +165,8 @@ namespace MonkeCosmetics
 
         public void RemovePress()
         {
-            if (NetworkSystem.Instance.InRoom)
-            {
-                foreach (VRRig rig in GorillaParent.instance.vrrigs)
-                    CosmeticsNetworking.Instance.ResetMaterial(rig);
-            }
-            else
-            {
-                currentMaterial = null;
-                localMesh.material = VRRig.LocalRig.materialsToChangeTo[0];
-            }
+            currentMaterial = null;
+            localMesh.material = VRRig.LocalRig.materialsToChangeTo[0];
         }
 
 
@@ -201,7 +187,17 @@ namespace MonkeCosmetics
                 localMesh.material = mat;
 
             if (NetworkSystem.Instance.InRoom)
+            {
+                LocalCosmetics = new Hashtable
+                {
+                    { "MonkeCosmetics::Material", mat.name }
+                };
+
+                PhotonNetwork.LocalPlayer.SetCustomProperties(LocalCosmetics);
+
+                if (Plugin.Instance.network.Value) return;
                 NetworkMaterial(mat);
+            }
         }
 
         bool IsSpecial(string name)
@@ -212,12 +208,7 @@ namespace MonkeCosmetics
 
         void NetworkMaterial(Material mat)
         {
-            LocalCosmetics = new Hashtable
-            {
-                { "MonkeCosmetics::Material", mat.name }
-            };
-
-            PhotonNetwork.LocalPlayer.SetCustomProperties(LocalCosmetics);
+            if (Plugin.Instance.network.Value) return;
             currentMaterial = mat;
 
             foreach (VRRig rig in GorillaParent.instance.vrrigs)
@@ -225,7 +216,11 @@ namespace MonkeCosmetics
                 if (rig.isLocal || rig.IsTagged()) continue;
 
                 if (rig.Creator?.GetPlayerRef().CustomProperties["MonkeCosmetics::Material"] is not string matName)
+                {
+                    if (Plugin.Instance.materialSet.Value) CosmeticsNetworking.Instance.SetVRRigMaterial(mat, rig);
                     continue;
+                }
+
 
                 foreach (Material m in materials)
                 {
@@ -248,5 +243,9 @@ namespace MonkeCosmetics
             // Plugin.MaterialName.text = upper;
         }
 
+    }
+    public static class Extensions
+    {
+        public static bool IsTagged(this VRRig rig) => rig.setMatIndex == 2 || rig.setMatIndex == 11 || rig.setMatIndex == 1;
     }
 }

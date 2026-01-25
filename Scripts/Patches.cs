@@ -23,24 +23,4 @@ namespace MonkeCosmetics.Scripts
             CustomCosmeticManager.instance.SetMaterial(CustomCosmeticManager.instance.currentMaterial);
         }
     }
-    [HarmonyWrapSafe]
-    [HarmonyPatch(typeof(VRRig), nameof(VRRig.InitializeNoobMaterial))]
-    public class InitializeNoobMaterialr
-    {
-        [HarmonyPostfix]
-        private static void Postfix(VRRig __instance)
-        {
-            CustomCosmeticManager.instance.SetMaterial(CustomCosmeticManager.instance.currentMaterial);
-        }
-    }
-    [HarmonyWrapSafe]
-    [HarmonyPatch(typeof(VRRig), nameof(VRRig.ChangeMaterial))]
-    public class MatCheckPatchr
-    {
-        [HarmonyPostfix]
-        private static void Postfix(VRRig __instance)
-        {
-            CustomCosmeticManager.instance.SetMaterial(CustomCosmeticManager.instance.currentMaterial);
-        }
-    }
 }

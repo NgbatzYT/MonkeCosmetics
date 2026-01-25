@@ -28,9 +28,6 @@
     <Reference Include="BepInEx.Harmony">
       <HintPath>$(BepInExAssemblyPath)\BepInEx.Harmony.dll</HintPath>
     </Reference>
-    <Reference Include="ComputerInterface">
-      <HintPath>..\..\..\..\..\Program Files (x86)\Steam\steamapps\common\Gorilla Tag\BepInEx\plugins\ComputerInterface\ComputerInterface.dll</HintPath>
-    </Reference>
     <Reference Include="Fusion.Common">
       <HintPath>..\..\..\..\..\Program Files (x86)\Steam\steamapps\common\Gorilla Tag\Gorilla Tag_Data\Managed\Fusion.Common.dll</HintPath>
     </Reference>
