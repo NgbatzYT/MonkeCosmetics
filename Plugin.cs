@@ -2,14 +2,16 @@
 using BepInEx.Configuration;
 using BepInEx.Logging;
 using HarmonyLib;
+using MonkeCosmetics.Editor.Cosmetic;
 using System.IO;
 using System.Reflection;
 using TMPro;
 using UnityEngine;
+using UnityEngine.UI;
 
 namespace MonkeCosmetics
 {
-    [BepInPlugin("ngbatz.monkecosmetics", "MonkeCosmetics", "1.0.4")]
+    [BepInPlugin("ngbatz.monkecosmetics", "Monke Cosmetics Beta", "2.0.0")]
     public class Plugin : BaseUnityPlugin
     {
         public static Plugin Instance { get; private set; }
@@ -22,16 +24,14 @@ namespace MonkeCosmetics
 
         public static GameObject Left;
         public static GameObject Right;
-        public static GameObject E1;
-        public static GameObject E2;
-        public static GameObject E3;
-        public static GameObject Remove;
-        public static GameObject H1;
-        public static GameObject H2;
-        public static GameObject H3;
-        public static GameObject MAT;
-        public static GameObject HAT;
-        public static GameObject H4;
+        public static GameObject Equip;
+        public static TMP_Text EquipText;
+        public static TMP_Text NameText;
+        public static GameObject Preview;
+        public static GameObject Material;
+        public static GameObject Cosmetic;
+        public static RawImage Thumbnail;
+
 
         public ConfigEntry<bool> materialSet;
         public ConfigEntry<bool> network;
@@ -58,28 +58,27 @@ namespace MonkeCosmetics
             MonkeCosmetics = Instantiate(bundle.LoadAsset<GameObject>("MonkeCosmetics"));
 
             // Positioning
-            MonkeCosmetics.transform.position = new Vector3(-63.2257f, 12.4455f, -82.4489f); 
-            MonkeCosmetics.transform.Rotate(0, 129.6149f, 0);
+            MonkeCosmetics.transform.position = new Vector3(-63.0757f, 12.4455f, -82.4489f);
+            MonkeCosmetics.transform.rotation = Quaternion.Euler(new Vector3(0, 100, 0));
 
             // Grabbing Objects
-            E1 = MonkeCosmetics.transform.Find("e1").gameObject;
-            E2 = MonkeCosmetics.transform.Find("e2").gameObject;
-            E3 = MonkeCosmetics.transform.Find("e3").gameObject;
-            Left = MonkeCosmetics.transform.Find("left").gameObject;
-            Right = MonkeCosmetics.transform.Find("right").gameObject;
-            Remove = MonkeCosmetics.transform.Find("Remove").gameObject;
-            H1 = MonkeCosmetics.transform.Find("head1").gameObject;
-            H2 = MonkeCosmetics.transform.Find("head2").gameObject;
-            H3 = MonkeCosmetics.transform.Find("head3").gameObject;
-            H4 = MonkeCosmetics.transform.Find("headmaster").gameObject;
-            MAT = MonkeCosmetics.transform.Find("Material").gameObject;
-            HAT = MonkeCosmetics.transform.Find("Hats").gameObject;
-            MonkeCosmetics.transform.Find("Material").gameObject.SetActive(false);
-            MonkeCosmetics.transform.Find("Hats").gameObject.SetActive(false);
+            Equip = MonkeCosmetics.transform.Find("Screen/Button").gameObject;
+            EquipText = MonkeCosmetics.transform.Find("Screen/Button/Text").gameObject.GetComponent<TMP_Text>();
+            NameText = MonkeCosmetics.transform.Find("Screen/Name").gameObject.GetComponent<TMP_Text>();
+            Left = MonkeCosmetics.transform.Find("Screen/left").gameObject;
+            Right = MonkeCosmetics.transform.Find("Screen/right").gameObject;
+            Preview = MonkeCosmetics.transform.Find("Stand/PreviewAnchor").gameObject;
+            Material = MonkeCosmetics.transform.Find("Screen/materials").gameObject;
+            Cosmetic = MonkeCosmetics.transform.Find("Screen/hats").gameObject;
+            Thumbnail = MonkeCosmetics.transform.Find("Screen/RawImage").gameObject.GetComponent<RawImage>();
 
+            Cosmetic.SetActive(false);
+            Material.SetActive(false);
             // Adding Components
             MonkeCosmetics.AddComponent<CustomCosmeticManager>();
             MonkeCosmetics.AddComponent<CosmeticsNetworking>();
+
+            bundle.Unload(false);
         }
 
         private bool funBool;
@@ -96,7 +95,7 @@ namespace MonkeCosmetics
             {
                 case true when !funBool:
                 {
-                    Material mat = CustomCosmeticManager.instance.currentMaterial;
+                    MonkeMaterial mat = CustomCosmeticManager.instance.currentMaterial;
                     if (mat != null)
                         CustomCosmeticManager.instance.SetMaterial(mat);
 

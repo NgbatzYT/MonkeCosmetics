@@ -1,8 +1,7 @@
-﻿using Photon.Pun;
+﻿using MonkeCosmetics.Editor.Cosmetic;
+using Photon.Pun;
 using Photon.Realtime;
 using System;
-using System.Collections.Generic;
-using System.Linq;
 using UnityEngine;
 using Hashtable = ExitGames.Client.Photon.Hashtable;
 
@@ -30,7 +29,7 @@ namespace MonkeCosmetics
                 var e = GorillaGameManager.instance.FindPlayerVRRig(p);
 
                 if (e.isLocal) { continue; }
-
+                ResetMaterial(e);
                 if (e.IsTagged()) { continue; }
 
                 var matName = p.GetPlayerRef().CustomProperties[MaterialKey];
@@ -49,7 +48,7 @@ namespace MonkeCosmetics
                     foreach (var mat in CustomCosmeticManager.materials)
                     {
                         if (mat.name != (string)matName) continue;
-                        
+
                         Debug.Log($"[Monke Cosmetics] Setting material for {p.NickName}");
                         SetVRRigMaterial(mat, e);
                         return;
@@ -85,12 +84,12 @@ namespace MonkeCosmetics
                     }
                     try
                     {
-                        
+
                         foreach (var mat in CustomCosmeticManager.materials)
                         {
                             if (mat.name != (string)matName) continue;
-                        
-                            if(mat == null)
+
+                            if (mat == null)
                             {
                                 Debug.Log($"[Monke Cosmetics] Setting material for {targetPlayer.NickName} failed: you don't have their material installed.");
                             }
@@ -109,14 +108,13 @@ namespace MonkeCosmetics
             }
         }
 
-        public void SetVRRigMaterial(Material material, VRRig Rig)
+        public void SetVRRigMaterial(MonkeMaterial material, VRRig Rig)
         {
             if (Plugin.Instance.network.Value) return;
             if (material == null) return;
-            var CCM = CustomCosmeticManager.instance;
-            if (CCM.specialVariables.Any(s => string.Equals(s, CCM.CheckText(material.name), StringComparison.OrdinalIgnoreCase))) { material.color = new Color(VRRig.LocalRig.playerColor.r, VRRig.LocalRig.playerColor.g, VRRig.LocalRig.playerColor.b, material.color.a); }
+            if (material.customColours) { material.material.color = new Color(VRRig.LocalRig.playerColor.r, VRRig.LocalRig.playerColor.g, VRRig.LocalRig.playerColor.b, material.material.color.a); }
 
-            Rig.transform.root.Find("gorilla_new").GetComponent<SkinnedMeshRenderer>().material = material;
+            Rig.transform.root.Find("gorilla_new").GetComponent<SkinnedMeshRenderer>().material = material.material;
         }
 
         private void SetProp()
@@ -130,7 +128,7 @@ namespace MonkeCosmetics
 
         public void ResetMaterial(VRRig Rig)
         {
-            if(Rig == null) return;
+            if (Rig == null) return;
             Debug.Log("[Monke Cosmetics] Started to reset material");
             if (Rig.isLocal)
             {
@@ -144,11 +142,11 @@ namespace MonkeCosmetics
             else
             {
                 if (Plugin.Instance.network.Value) return;
-                SetVRRigMaterial(Rig.materialsToChangeTo[Rig.setMatIndex], Rig);
-                Debug.Log($"[Monke Cosmetics] Reset material for {Rig.OwningNetPlayer.NickName}");
+                //SetVRRigMaterial(Rig.materialsToChangeTo[Rig.setMatIndex], Rig);
+                Debug.Log($"[Monke Cosmetics] Reset material for {Rig.Creator.NickName}");
             }
         }
     }
 
-    
+
 }

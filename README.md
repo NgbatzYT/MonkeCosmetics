@@ -4,9 +4,7 @@ This mod is a sort of rewrite of the original cosmetics mod known as Gorilla Cos
 This is not intergrated with the wardrobe currently but in the future that may be a possiblity.
 
 ### How to add assets?
-Putting The `.MCmat` file in the plguins folder will load all materials that are in the MCmat file.
-
-Eventually we will switch to a whole different schema but for now this works.
+Putting The `.MCcosmetic` file in the materials folder in the BepInEx folder, will load all materials and cosmetics in the file.
 
 ## Credits
 

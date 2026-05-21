@@ -10,7 +10,7 @@ namespace MonkeCosmetics.Scripts
         [HarmonyPostfix]
         public static void Postfix(VRRig __instance)
         {
-            CustomCosmeticManager.instance.SetMaterial(CustomCosmeticManager.instance.currentMaterial);
+            if(CustomCosmeticManager.instance.currentMaterial) CustomCosmeticManager.instance.SetMaterial(CustomCosmeticManager.instance.currentMaterial);
         }
     }
     [HarmonyWrapSafe]
@@ -20,7 +20,7 @@ namespace MonkeCosmetics.Scripts
         [HarmonyPostfix]
         private static void Postfix(VRRig __instance)
         {
-            CustomCosmeticManager.instance.SetMaterial(CustomCosmeticManager.instance.currentMaterial);
+            if (CustomCosmeticManager.instance.currentMaterial) CustomCosmeticManager.instance.SetMaterial(CustomCosmeticManager.instance.currentMaterial);
         }
     }
 }

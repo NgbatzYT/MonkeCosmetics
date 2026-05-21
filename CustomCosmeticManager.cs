@@ -1,12 +1,12 @@
 ﻿using BepInEx;
-using ExitGames.Client.Photon;
+using MonkeCosmetics.Editor.Cosmetic;
 using MonkeCosmetics.Scripts;
 using Photon.Pun;
 using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 using UnityEngine;
+using Hashtable = ExitGames.Client.Photon.Hashtable;
 
 namespace MonkeCosmetics
 {
@@ -14,18 +14,16 @@ namespace MonkeCosmetics
     {
         public static CustomCosmeticManager instance;
 
-        public static List<Material> materials = [];
+        public static List<MonkeMaterial> materials = [];
+        public static List<MonkeCosmetic> cosmetics = [];
 
         private SkinnedMeshRenderer localMesh;
 
-        public Material currentMaterial;
+        public MonkeMaterial currentMaterial;
 
-        public string[] specialVariables = { "_followplayercolor", "_followplayercolour" };
         public List<GameObject> Buttons = [];
 
-
-        private int pageIndex = 0;
-        private const int pageSize = 3;
+        private int Index = 0;
 
         public Hashtable LocalCosmetics { get; private set; }
 
@@ -37,23 +35,77 @@ namespace MonkeCosmetics
             StartAF();
         }
 
+        public static bool IsValidJson<T>(string json)
+        {
+            if (string.IsNullOrWhiteSpace(json))
+                return false;
+
+            try
+            {
+                T obj = JsonUtility.FromJson<T>(json);
+
+                return obj != null;
+            }
+            catch
+            {
+                return false;
+            }
+        }
+
+        // returns false if duplicate
+        private bool CheckDuplicate(MonkeMaterial material)
+        {
+            if (material.id == null) return false;
+
+            if (materials.Contains(material)) return false;
+
+            foreach (var mat in materials)
+            {
+                if (material.id == mat.id)
+                {
+                    return false;
+                }
+            }
+
+            return true;
+        }
+
+        private bool CheckDuplicate(MonkeCosmetic Cosmetic)
+        {
+            if (Cosmetic.id == null) return false;
+
+            if (cosmetics.Contains(Cosmetic)) return false;
+
+            foreach (var cos in cosmetics)
+            {
+                if (Cosmetic.id == cos.id)
+                {
+                    return false;
+                }
+            }
+
+            return true;
+        }
+
         private void StartAF()
         {
-            materials.AddRange(Plugin.Instance.bundle.LoadAllAssets<Material>());
-            Plugin.Instance.bundle.Unload(false);
-
             foreach (var bundle in LoadAllBundles())
             {
-                var mats = bundle.LoadAllAssets<Material>();
-                materials.AddRange(mats);
+                foreach (var material in bundle.LoadAllAssets<MonkeMaterial>())
+                {
+                    if (material != null && CheckDuplicate(material))
+                        materials.Add(material);
+                }
 
                 bundle.Unload(false);
             }
 
 
+            if(materials.Count == 0) gameObject.SetActive(false);
+
             localMesh = GameObject.Find("Player Objects")?.transform.Find("Local VRRig/Local Gorilla Player/gorilla_new").GetComponent<SkinnedMeshRenderer>();
 
-            Buttons.AddRange([Plugin.Left, Plugin.Right, Plugin.E1, Plugin.Remove, Plugin.E2, Plugin.E3]);
+            Buttons.AddRange([Plugin.Left, Plugin.Right, Plugin.Equip, Plugin.Cosmetic, Plugin.Material]);
 
             foreach (GameObject button in Buttons)
             {
@@ -61,14 +113,7 @@ namespace MonkeCosmetics
                 button.layer = 18;
             }
 
-            UpdateDisplays();
-        }
-
-        public string CheckText(string text)
-        {
-            string match = specialVariables.FirstOrDefault(k => text.Contains(k, StringComparison.OrdinalIgnoreCase));
-
-            return !string.IsNullOrEmpty(match) ? match : null;
+            UpdateDisplay();
         }
 
         private static List<AssetBundle> LoadAllBundles()
@@ -88,29 +133,32 @@ namespace MonkeCosmetics
                 }
             }
 
-            instance.gameObject.AddComponent<LegacySupport.LegacySupport>();
+            //instance.gameObject.AddComponent<LegacySupport.LegacySupport>();
             return bundles;
         }
 
-        Material GetMaterial(int index)
+        void UpdateDisplay()
         {
-            if (index < 0 || index >= materials.Count)
-                return null;
+            if (materials.Count == 0)
+            {
+                Debug.Log("No materials loaded!");
+                return;
+            }
 
-            return materials[index];
-        }
+            if (materials[Index] == currentMaterial)
+            {
+                Plugin.EquipText.text = "Remove";
+            }
+            else if (materials[Index] != currentMaterial)
+            {
+                Plugin.EquipText.text = "Equip";
+            }
 
-        void UpdateDisplays()
-        {
-            int baseIndex = pageIndex * pageSize;
+            Plugin.NameText.text = materials[Index].materialName;
 
-            SetDisplay(Plugin.H1, Plugin.E1, GetMaterial(baseIndex));
-            SetDisplay(Plugin.H2, Plugin.E2, GetMaterial(baseIndex + 1));
-            SetDisplay(Plugin.H3, Plugin.E3, GetMaterial(baseIndex + 2));
+            Plugin.Preview.GetComponent<MeshRenderer>().material = materials[Index].material;
 
-
-
-            UpdateState();
+            Plugin.Thumbnail.texture = materials[Index].Thumbnail;
         }
 
         void SetDisplay(GameObject display, GameObject e, Material mat)
@@ -124,67 +172,49 @@ namespace MonkeCosmetics
             renderer.material = mat ?? renderer.material;
         }
 
-        void UpdateState()
-        {
-            int maxPage = Mathf.CeilToInt(materials.Count / (float)pageSize) - 1;
-
-            Plugin.Left.SetActive(pageIndex > 0);
-            Plugin.Right.SetActive(pageIndex < maxPage);
-        }
-
-
         public void LeftArrow()
         {
-            if (pageIndex > 0)
-                pageIndex--;
-
-            UpdateDisplays();
+            if (Index > 0) Index--;
+            else Index = materials.Count; 
+            UpdateDisplay();
         }
 
         public void RightArrow()
         {
-            int maxPage = Mathf.CeilToInt(materials.Count / (float)pageSize) - 1;
-
-            if (pageIndex < maxPage)
-                pageIndex++;
-
-            UpdateDisplays();
+            if (Index < materials.Count) Index++;
+            else Index = 0;
+            UpdateDisplay();
         }
 
-        public void SelectPress(int slot)
+        public void SelectPress()
         {
-            int materialIndex = pageIndex * pageSize + slot;
-            Material mat = GetMaterial(materialIndex);
+            if (materials[Index] != currentMaterial)
+            {
+                SetMaterial(materials[Index]);
+            }
+            else
+            {
+                CosmeticsNetworking.Instance.ResetMaterial(VRRig.LocalRig);
+            }
 
-            if (mat == null)
-                return;
-
-            SetMaterial(mat);
-            SetText(mat.name);
-        }
-
-        public void RemovePress()
-        {
-            currentMaterial = null;
-            localMesh.material = VRRig.LocalRig.materialsToChangeTo[0];
+            UpdateDisplay();
         }
 
 
-        public void SetMaterial(Material mat)
+        public void SetMaterial(MonkeMaterial mat)
         {
             if (mat == null) return;
 
-            Plugin.H4.GetComponent<Renderer>().material = mat;
             currentMaterial = mat;
 
-            if (IsSpecial(mat.name))
+            if (mat.customColours)
             {
                 var c = VRRig.LocalRig.playerColor;
-                mat.color = new Color(c.r, c.g, c.b, mat.color.a);
+                mat.material.color = new Color(c.r, c.g, c.b, mat.material.color.a);
             }
 
             if (!NetworkSystem.Instance.InRoom || !VRRig.LocalRig.IsTagged())
-                localMesh.material = mat;
+                localMesh.material = mat.material;
 
             if (NetworkSystem.Instance.InRoom)
             {
@@ -196,22 +226,16 @@ namespace MonkeCosmetics
                 PhotonNetwork.LocalPlayer.SetCustomProperties(LocalCosmetics);
 
                 if (Plugin.Instance.network.Value) return;
-                NetworkMaterial(mat);
+
             }
         }
 
-        bool IsSpecial(string name)
-        {
-            return specialVariables.Any(s =>
-                name.Contains(s, StringComparison.OrdinalIgnoreCase));
-        }
-
-        void NetworkMaterial(Material mat)
+        void NetworkMaterial(MonkeMaterial mat)
         {
             if (Plugin.Instance.network.Value) return;
             currentMaterial = mat;
 
-            foreach (VRRig rig in GorillaParent.instance.vrrigs)
+            foreach (VRRig rig in VRRigCache.ActiveRigs)
             {
                 if (rig.isLocal || rig.IsTagged()) continue;
 
@@ -222,25 +246,11 @@ namespace MonkeCosmetics
                 }
 
 
-                foreach (Material m in materials)
+                foreach (MonkeMaterial m in materials)
                 {
-                    if (m.name == matName)
-                        CosmeticsNetworking.Instance.SetVRRigMaterial(m, rig);
+                    CosmeticsNetworking.Instance.SetVRRigMaterial(m, rig);
                 }
             }
-        }
-
-        void SetText(string text)
-        {
-            string upper = text.ToUpper();
-
-            string match = specialVariables.FirstOrDefault(s =>
-                upper.Contains(s, StringComparison.OrdinalIgnoreCase));
-
-            if (!string.IsNullOrEmpty(match))
-                upper = upper.Replace(match, "", StringComparison.OrdinalIgnoreCase);
-
-            // Plugin.MaterialName.text = upper;
         }
 
     }

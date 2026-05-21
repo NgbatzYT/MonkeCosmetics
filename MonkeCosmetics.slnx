@@ -1,3 +1,4 @@
 <Solution>
+  <Project Path="../MonkeCosmetics.Editor/MonkeCosmetics.Editor.csproj" Id="b53eedc2-0ce0-4a31-99fd-7c400161ff89" />
   <Project Path="MonkeCosmetics.csproj" />
 </Solution>

@@ -33,14 +33,14 @@ namespace MonkeCosmetics.LegacySupport
                     else
                     {
 
-                        AssetBundle b = AssetBundle.LoadFromFile(path);
+                        /*AssetBundle b = AssetBundle.LoadFromFile(path);
                         var e = b.LoadAsset<GameObject>("material");
 
                         var mat = e.GetComponent<Renderer>().material;
 
                         ConvertMaterial(mat);
                         b.Unload(false);
-                        CustomCosmeticManager.materials.Add(mat);
+                        CustomCosmeticManager.materials.Add(mat)*/
                     }
                 }
             }
