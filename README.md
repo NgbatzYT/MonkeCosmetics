@@ -23,11 +23,3 @@ Putting The `.MCcosmetic` file in the materials folder in the BepInEx folder, wi
 * Fifth Grab the created `.mcmat` file and test in game!
 
 If you still can't figure out how to do it you can go to `#material-creation-help` in https://discord.gg/5E2WaaRx5u to get help!
-
-### Disclaimer
-Try not to name materials the same as others so like add your username or something to it, it just needs to be unique to not cause problems!
-
-### Operator Functions
-All valid special operators are below, you can append these to the end of the material name and it will change what the material does (You can only have one at a time).
-
-`_FollowPlayerColor`: This makes the materials colour follow the players colour.
