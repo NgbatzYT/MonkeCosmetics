@@ -20,6 +20,7 @@ namespace MonkeCosmetics
         private SkinnedMeshRenderer localMesh;
 
         public MonkeMaterial currentMaterial;
+        public static List<MonkeCosmetic> equippedCosmetics = [];
 
         public List<GameObject> Buttons = [];
 
@@ -33,23 +34,6 @@ namespace MonkeCosmetics
             else Destroy(this);
 
             StartAF();
-        }
-
-        public static bool IsValidJson<T>(string json)
-        {
-            if (string.IsNullOrWhiteSpace(json))
-                return false;
-
-            try
-            {
-                T obj = JsonUtility.FromJson<T>(json);
-
-                return obj != null;
-            }
-            catch
-            {
-                return false;
-            }
         }
 
         // returns false if duplicate
@@ -112,7 +96,7 @@ namespace MonkeCosmetics
                 button.AddComponent<ButtonHandler>();
                 button.layer = 18;
             }
-
+            
             UpdateDisplay();
         }
 
@@ -120,11 +104,16 @@ namespace MonkeCosmetics
         {
             List<AssetBundle> bundles = [];
 
-            foreach (string path in Directory.GetFiles(Paths.PluginPath, "*.MCmat", SearchOption.AllDirectories))
+            foreach (string path in Directory.GetFiles(Paths.PluginPath, "*.MCcosmetic", SearchOption.AllDirectories))
             {
                 try
                 {
-                    bundles.Add(AssetBundle.LoadFromFile(path));
+                    var bundle = AssetBundle.LoadFromFile(path);
+                    if(bundle != null)
+                        bundles.Add(bundle);
+                    else throw new NullReferenceException(path);
+
+
                     Debug.Log($"[MonkeCosmetics] Loaded bundle: {Path.GetFileName(path)}");
                 }
                 catch (Exception e)
@@ -133,7 +122,7 @@ namespace MonkeCosmetics
                 }
             }
 
-            //instance.gameObject.AddComponent<LegacySupport.LegacySupport>();
+            instance.gameObject.AddComponent<LegacySupport.LegacySupport>();
             return bundles;
         }
 
@@ -161,27 +150,16 @@ namespace MonkeCosmetics
             Plugin.Thumbnail.texture = materials[Index].Thumbnail;
         }
 
-        void SetDisplay(GameObject display, GameObject e, Material mat)
-        {
-            if (display == null || e == null) return;
-            e.SetActive(mat != null);
-            display.SetActive(mat != null);
-
-            if (mat == null) return;
-            var renderer = display.GetComponent<MeshRenderer>();
-            renderer.material = mat ?? renderer.material;
-        }
-
         public void LeftArrow()
         {
             if (Index > 0) Index--;
-            else Index = materials.Count; 
+            else Index = materials.Count - 1; 
             UpdateDisplay();
         }
 
         public void RightArrow()
         {
-            if (Index < materials.Count) Index++;
+            if (Index < materials.Count - 1) Index++;
             else Index = 0;
             UpdateDisplay();
         }
@@ -215,44 +193,7 @@ namespace MonkeCosmetics
 
             if (!NetworkSystem.Instance.InRoom || !VRRig.LocalRig.IsTagged())
                 localMesh.material = mat.material;
-
-            if (NetworkSystem.Instance.InRoom)
-            {
-                LocalCosmetics = new Hashtable
-                {
-                    { "MonkeCosmetics::Material", mat.name }
-                };
-
-                PhotonNetwork.LocalPlayer.SetCustomProperties(LocalCosmetics);
-
-                if (Plugin.Instance.network.Value) return;
-
-            }
         }
-
-        void NetworkMaterial(MonkeMaterial mat)
-        {
-            if (Plugin.Instance.network.Value) return;
-            currentMaterial = mat;
-
-            foreach (VRRig rig in VRRigCache.ActiveRigs)
-            {
-                if (rig.isLocal || rig.IsTagged()) continue;
-
-                if (rig.Creator?.GetPlayerRef().CustomProperties["MonkeCosmetics::Material"] is not string matName)
-                {
-                    if (Plugin.Instance.materialSet.Value) CosmeticsNetworking.Instance.SetVRRigMaterial(mat, rig);
-                    continue;
-                }
-
-
-                foreach (MonkeMaterial m in materials)
-                {
-                    CosmeticsNetworking.Instance.SetVRRigMaterial(m, rig);
-                }
-            }
-        }
-
     }
     public static class Extensions
     {

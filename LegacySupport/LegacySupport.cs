@@ -1,5 +1,6 @@
 ﻿using BepInEx;
 using GorillaCosmetics.Data;
+using MonkeCosmetics.Editor.Cosmetic;
 using System;
 using System.IO;
 using System.Linq;
@@ -15,8 +16,8 @@ namespace MonkeCosmetics.LegacySupport
 
             foreach (string path in Directory.GetFiles(Paths.PluginPath, "*", SearchOption.AllDirectories))
             {
-                
-                if (new string[] { ".material", ".gmat", ".gmatplus" }.Contains(Path.GetExtension(path)))
+
+                if (new string[] { ".material", ".gmat", ".gmatplus", ".mcmat" }.Contains(Path.GetExtension(path).ToLower()))
                 {
                     if (File.Exists(path) && File.ReadAllBytes(path).Length >= 2 && File.ReadAllBytes(path)[0] == 0x50 && File.ReadAllBytes(path)[1] == 0x4B)
                     {
@@ -32,15 +33,63 @@ namespace MonkeCosmetics.LegacySupport
                     }
                     else
                     {
+                        if (Path.GetExtension(path).ToLower().Contains(".mcmat"))
+                        {
+                            AssetBundle b = AssetBundle.LoadFromFile(path);
 
-                        /*AssetBundle b = AssetBundle.LoadFromFile(path);
-                        var e = b.LoadAsset<GameObject>("material");
+                            var es = b.LoadAllAssets<MonkeMaterial>();
 
-                        var mat = e.GetComponent<Renderer>().material;
+                            if(es.Length > 0)
+                            {
+                                foreach(MonkeMaterial meat in es)
+                                    CustomCosmeticManager.materials.Add(meat);
 
-                        ConvertMaterial(mat);
-                        b.Unload(false);
-                        CustomCosmeticManager.materials.Add(mat)*/
+                                b.Unload(false);
+                            }
+
+
+                            var e = b.LoadAllAssets<Material>();
+
+                            foreach (Material mat in e)
+                            {
+                                MonkeMaterial matConverted = MonkeMaterial.CreateInstance<MonkeMaterial>();
+
+                                if (new string[] { "_followplayercolour", "_followplayercolor" }.Contains(mat.name.ToLower()))
+                                    matConverted.customColours = true;
+
+                                matConverted.material = mat;
+                                matConverted.id = $"legacy{Guid.NewGuid().ToString("N")[..5].ToUpper()}.{mat.name}";
+
+                                matConverted.materialName = matConverted.material.name;
+
+                                CustomCosmeticManager.materials.Add(matConverted);
+                            }
+
+                            b.Unload(false);
+                        }
+                        else
+                        {
+                            AssetBundle b = AssetBundle.LoadFromFile(path);
+                            var e = b.LoadAsset<GameObject>("material");
+
+                            var mat = e.GetComponent<Renderer>().material;
+
+                            ConvertMaterial(mat);
+
+                            MonkeMaterial matConverted = MonkeMaterial.CreateInstance<MonkeMaterial>();
+
+                            if (new string[] { "_followplayercolour", "_followplayercolor" }.Contains(mat.name.ToLower()))
+                                matConverted.customColours = true;
+
+                            matConverted.material = mat;
+                            matConverted.id = $"legacy{Guid.NewGuid().ToString("N")[..5].ToUpper()}.{mat.name}";
+
+                            matConverted.materialName = matConverted.material.name;
+
+                            CustomCosmeticManager.materials.Add(matConverted);
+
+                            b.Unload(false);
+                        }
                     }
                 }
             }

@@ -11,7 +11,7 @@ using UnityEngine.UI;
 
 namespace MonkeCosmetics
 {
-    [BepInPlugin("ngbatz.monkecosmetics", "Monke Cosmetics Beta", "2.0.0")]
+    [BepInPlugin("ngbatz.monkecosmetics", "Monke Cosmetics", "2.0.1")]
     public class Plugin : BaseUnityPlugin
     {
         public static Plugin Instance { get; private set; }
@@ -32,9 +32,7 @@ namespace MonkeCosmetics
         public static GameObject Cosmetic;
         public static RawImage Thumbnail;
 
-
         public ConfigEntry<bool> materialSet;
-        public ConfigEntry<bool> network;
 
         ControllerInputPoller c;
 
@@ -48,7 +46,6 @@ namespace MonkeCosmetics
         {
             // idk
             materialSet = Config.Bind("General", "SetMaterialForOthers", false, "If set to true it will set your material to people without the mod otherwise it won't.");
-            network = Config.Bind("General", "DisableNetworking", true, "If set to true it will disable all networking.");
             Instance = this;
 
             // Asset Loading 
@@ -72,8 +69,9 @@ namespace MonkeCosmetics
             Cosmetic = MonkeCosmetics.transform.Find("Screen/hats").gameObject;
             Thumbnail = MonkeCosmetics.transform.Find("Screen/RawImage").gameObject.GetComponent<RawImage>();
 
-            Cosmetic.SetActive(false);
             Material.SetActive(false);
+            Cosmetic.SetActive(false);
+
             // Adding Components
             MonkeCosmetics.AddComponent<CustomCosmeticManager>();
             MonkeCosmetics.AddComponent<CosmeticsNetworking>();
