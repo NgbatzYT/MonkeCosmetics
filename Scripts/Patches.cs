@@ -1,5 +1,6 @@
-﻿using HarmonyLib;
-
+﻿using GorillaCosmetics.Data;
+using HarmonyLib;
+using MonkeCosmetics.Cosmetic.Pages;
 
 namespace MonkeCosmetics.Scripts
 {
@@ -10,7 +11,7 @@ namespace MonkeCosmetics.Scripts
         [HarmonyPostfix]
         public static void Postfix(VRRig __instance)
         {
-            CustomCosmeticManager.instance.SetMaterial(CustomCosmeticManager.instance.currentMaterial);
+            if(MaterialPage.instance.currentMaterial && MaterialPage.initialised) MaterialPage.instance.SetMaterial(MaterialPage.instance.currentMaterial);
         }
     }
     [HarmonyWrapSafe]
@@ -20,7 +21,7 @@ namespace MonkeCosmetics.Scripts
         [HarmonyPostfix]
         private static void Postfix(VRRig __instance)
         {
-            CustomCosmeticManager.instance.SetMaterial(CustomCosmeticManager.instance.currentMaterial);
+            if (MaterialPage.instance.currentMaterial && MaterialPage.initialised) MaterialPage.instance.SetMaterial(MaterialPage.instance.currentMaterial);
         }
     }
 }

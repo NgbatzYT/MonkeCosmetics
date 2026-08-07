@@ -1,54 +1,46 @@
 ﻿using BepInEx;
-using BepInEx.Configuration;
 using BepInEx.Logging;
 using HarmonyLib;
+using MonkeCosmetics.Scripts;
 using System.IO;
 using System.Reflection;
 using TMPro;
 using UnityEngine;
+using UnityEngine.UI;
 
 namespace MonkeCosmetics
 {
-    [BepInPlugin("ngbatz.monkecosmetics", "MonkeCosmetics", "1.0.4")]
+    [BepInPlugin("ngbatz.monkecosmetics", "Monke Cosmetics", "2.1.0")]
     public class Plugin : BaseUnityPlugin
     {
         public static Plugin Instance { get; private set; }
         public AssetBundle bundle;
-        //public static TextMeshPro MaterialName;
 
         public ManualLogSource manualLogSource;
 
         public static GameObject MonkeCosmetics { get; private set; }
 
         public static GameObject Left;
+        public static RawImage PageLeft;
         public static GameObject Right;
-        public static GameObject E1;
-        public static GameObject E2;
-        public static GameObject E3;
-        public static GameObject Remove;
-        public static GameObject H1;
-        public static GameObject H2;
-        public static GameObject H3;
-        public static GameObject MAT;
-        public static GameObject HAT;
-        public static GameObject H4;
+        public static RawImage PageRight;
+        public static GameObject Equip;
+        public static RawImage PageMain;
+        public static TMP_Text EquipText;
+        public static TMP_Text NameText;
+        public static TMP_Text DescriptionText;
+        public static GameObject Preview;
 
-        public ConfigEntry<bool> materialSet;
-        public ConfigEntry<bool> network;
+        public static RawImage Thumbnail;
 
-        ControllerInputPoller c;
-
-        void Start() 
+        void Start()
         {
             Harmony.CreateAndPatchAll(GetType().Assembly, "ngbatz.monkecosmetics");
             GorillaTagger.OnPlayerSpawned(OnGameInitialized);
-        } 
+        }
 
         void OnGameInitialized()
         {
-            // idk
-            materialSet = Config.Bind("General", "SetMaterialForOthers", false, "If set to true it will set your material to people without the mod otherwise it won't.");
-            network = Config.Bind("General", "DisableNetworking", true, "If set to true it will disable all networking.");
             Instance = this;
 
             // Asset Loading 
@@ -58,55 +50,38 @@ namespace MonkeCosmetics
             MonkeCosmetics = Instantiate(bundle.LoadAsset<GameObject>("MonkeCosmetics"));
 
             // Positioning
-            MonkeCosmetics.transform.position = new Vector3(-63.2257f, 12.4455f, -82.4489f); 
-            MonkeCosmetics.transform.Rotate(0, 129.6149f, 0);
+            MonkeCosmetics.transform.position = new Vector3(-63.0757f, 12.4455f, -82.4489f);
+            MonkeCosmetics.transform.rotation = Quaternion.Euler(new Vector3(0, 100, 0));
 
             // Grabbing Objects
-            E1 = MonkeCosmetics.transform.Find("e1").gameObject;
-            E2 = MonkeCosmetics.transform.Find("e2").gameObject;
-            E3 = MonkeCosmetics.transform.Find("e3").gameObject;
-            Left = MonkeCosmetics.transform.Find("left").gameObject;
-            Right = MonkeCosmetics.transform.Find("right").gameObject;
-            Remove = MonkeCosmetics.transform.Find("Remove").gameObject;
-            H1 = MonkeCosmetics.transform.Find("head1").gameObject;
-            H2 = MonkeCosmetics.transform.Find("head2").gameObject;
-            H3 = MonkeCosmetics.transform.Find("head3").gameObject;
-            H4 = MonkeCosmetics.transform.Find("headmaster").gameObject;
-            MAT = MonkeCosmetics.transform.Find("Material").gameObject;
-            HAT = MonkeCosmetics.transform.Find("Hats").gameObject;
-            MonkeCosmetics.transform.Find("Material").gameObject.SetActive(false);
-            MonkeCosmetics.transform.Find("Hats").gameObject.SetActive(false);
+            Equip = MonkeCosmetics.transform.Find("Screen/SelectButton").gameObject;
+            EquipText = Equip.transform.Find("Text").gameObject.GetComponent<TMP_Text>();
+            NameText = MonkeCosmetics.transform.Find("Screen/Name").gameObject.GetComponent<TMP_Text>();
+            DescriptionText = MonkeCosmetics.transform.Find("Screen/Description").gameObject.GetComponent<TMP_Text>();
+            Left = MonkeCosmetics.transform.Find("Screen/ButtonLeft").gameObject;
+            Right = MonkeCosmetics.transform.Find("Screen/ButtonRight").gameObject;
+            Preview = MonkeCosmetics.transform.Find("Stand/Preview/Material").gameObject;
+            Thumbnail = MonkeCosmetics.transform.Find("Screen/Image").gameObject.GetComponent<RawImage>();
+            PageMain = MonkeCosmetics.transform.Find("Screen/PageButtonMain").gameObject.GetComponent<RawImage>();
+            PageLeft = MonkeCosmetics.transform.Find("Screen/PageButtonLeft").gameObject.GetComponent<RawImage>();
+            PageRight = MonkeCosmetics.transform.Find("Screen/PageButtonRight").gameObject.GetComponent<RawImage>();
+
+            PageMain.gameObject.AddComponent<PageButtonHandler>();
+            PageLeft.gameObject.AddComponent<PageButtonHandler>();
+            PageRight.gameObject.AddComponent<PageButtonHandler>();
+
+            PageMain.gameObject.GetComponent<Collider>().isTrigger = true;
+            PageLeft.gameObject.GetComponent<Collider>().isTrigger = true;
+            PageRight.gameObject.GetComponent<Collider>().isTrigger = true;
+
+            PageMain.gameObject.layer = 18;
+            PageLeft.gameObject.layer = 18;
+            PageRight.gameObject.layer = 18;
 
             // Adding Components
             MonkeCosmetics.AddComponent<CustomCosmeticManager>();
-            MonkeCosmetics.AddComponent<CosmeticsNetworking>();
-        }
 
-        private bool funBool;
-
-        private void Update()
-        {
-            if (Instance == null) return;
-
-            if (c == null) { c = ControllerInputPoller.instance; return; } 
-
-            bool pressed = c.leftControllerPrimaryButton && c.rightControllerPrimaryButton;
-
-            switch (pressed)
-            {
-                case true when !funBool:
-                {
-                    Material mat = CustomCosmeticManager.instance.currentMaterial;
-                    if (mat != null)
-                        CustomCosmeticManager.instance.SetMaterial(mat);
-
-                    funBool = true;
-                    break;
-                }
-                case false when funBool:
-                    funBool = false;
-                    break;
-            }
+            bundle.Unload(false);
         }
     }
 

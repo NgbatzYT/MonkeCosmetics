@@ -7,27 +7,17 @@
             base.ButtonActivation();
             switch (gameObject.name)
             {
-                case "left":
+                case "ButtonLeft":
+                    Debug.Log("left");
                     CustomCosmeticManager.instance.LeftArrow();
                     break;
-                case "right":
+                case "ButtonRight":
+                    Debug.Log("right");
                     CustomCosmeticManager.instance.RightArrow();
                     break;
-                case "e1":
-                    CustomCosmeticManager.instance.SelectPress(0);
-                    break;
-                case "e2":
-                    CustomCosmeticManager.instance.SelectPress(1);
-                    break;
-                case "e3":
-                    CustomCosmeticManager.instance.SelectPress(2);
-                    break;
-                case "Remove":
-                    CustomCosmeticManager.instance.RemovePress();
-                    break;
-                case "Hats":
-                    break;
-                case "Material":
+                case "SelectButton":
+                    Debug.Log("select");
+                    CustomCosmeticManager.instance.SelectPress();
                     break;
             }
         }

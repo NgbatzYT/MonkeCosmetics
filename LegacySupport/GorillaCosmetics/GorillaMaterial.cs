@@ -60,7 +60,7 @@ namespace GorillaCosmetics.Data
                 }
             }
 
-            if (material != null) CustomCosmeticManager.materials.Add(material);
+            //if (material != null) CustomCosmeticManager.materials.Add(material);
         }
 
         public Material GetMaterial()
