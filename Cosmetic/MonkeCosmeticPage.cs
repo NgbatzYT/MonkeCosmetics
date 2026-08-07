@@ -17,8 +17,6 @@ namespace MonkeCosmetics.Cosmetic
 
         public virtual void OnPageEntered()
         {
-            Plugin.NameText.text = "Page failed to load.";
-            Plugin.DescriptionText.text = "Page failed to load.";
 
         }
 
