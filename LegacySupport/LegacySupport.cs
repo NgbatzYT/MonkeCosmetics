@@ -55,8 +55,10 @@ namespace MonkeCosmetics.LegacySupport
                                 MonkeMaterial matConverted = MonkeMaterial.CreateInstance<MonkeMaterial>();
 
                                 if (new string[] { "_followplayercolour", "_followplayercolor" }.Contains(mat.name.ToLower()))
+                                {
                                     matConverted.customColours = true;
-
+                                }
+                                    
                                 matConverted.material = mat;
                                 matConverted.id = $"legacy{Guid.NewGuid().ToString("N")[..5].ToUpper()}.{mat.name}";
 

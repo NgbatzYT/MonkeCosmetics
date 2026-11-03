@@ -3,7 +3,6 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Reflection;
-using System.Text;
 using UnityEngine;
 
 namespace MonkeCosmetics.Cosmetic.Pages
@@ -16,16 +15,16 @@ namespace MonkeCosmetics.Cosmetic.Pages
         public MonkeMaterial currentMaterial;
         public static List<MonkeMaterial> materials = [];
         private int Index = 0;
-        private SkinnedMeshRenderer localMesh;
+        public SkinnedMeshRenderer localMesh;
 
         public override void OnMonkeCosmeticsIntialised()
         {
             base.OnMonkeCosmeticsIntialised();
-
+            CustomCosmeticManager.instance.SetPage(this);
             instance = this;
             initialised = true;
 
-            Icon = new Texture2D(1,1);
+            Icon = new Texture2D(1, 1);
             Stream stream = Assembly.GetExecutingAssembly().GetManifestResourceStream("MonkeCosmetics.Assets.material.png");
             using var ms = new MemoryStream();
             stream.CopyTo(ms);
@@ -36,15 +35,15 @@ namespace MonkeCosmetics.Cosmetic.Pages
             foreach (var bundle in LoadAllBundles())
             {
                 foreach (var material in bundle.LoadAllAssets<MonkeMaterial>())
-                {
                     if (material != null && CheckDuplicate(material))
                         materials.Add(material);
-                }
 
                 bundle.Unload(false);
             }
 
             CustomCosmeticManager.instance.gameObject.AddComponent<LegacySupport.LegacySupport>();
+
+            CustomCosmeticManager.instance.AddPage(typeof(CosmeticPage));
 
             localMesh = GameObject.Find("Player Objects")?.transform.Find("Local VRRig/Local Gorilla Player/gorilla_new").GetComponent<SkinnedMeshRenderer>();
         }
@@ -80,13 +79,9 @@ namespace MonkeCosmetics.Cosmetic.Pages
         {
             base.OnEquipPress();
             if (materials[Index] != currentMaterial)
-            {
                 SetMaterial(materials[Index]);
-            }
             else
-            {
-                ResetMaterial(VRRig.LocalRig);
-            }
+                ResetMaterial();
 
             DisplayUpdate();
         }
@@ -119,7 +114,6 @@ namespace MonkeCosmetics.Cosmetic.Pages
                 }
             }
 
-            
             return bundles;
         }
 
@@ -128,17 +122,15 @@ namespace MonkeCosmetics.Cosmetic.Pages
             if (materials.Count == 0)
             {
                 Debug.Log("No materials loaded!");
+                Plugin.NameText.text = "No Materials";
+                Plugin.DescriptionText.text = "No materials are loaded.";
                 return;
             }
 
             if (materials[Index] == currentMaterial)
-            {
                 Plugin.EquipText.text = "Remove";
-            }
             else if (materials[Index] != currentMaterial)
-            {
                 Plugin.EquipText.text = "Equip";
-            }
 
             Plugin.NameText.text = materials[Index].materialName;
             Plugin.DescriptionText.text = "";
@@ -148,17 +140,13 @@ namespace MonkeCosmetics.Cosmetic.Pages
             Plugin.Thumbnail.texture = materials[Index].Thumbnail;
         }
 
-        public void ResetMaterial(VRRig Rig)
+        public void ResetMaterial()
         {
-            if (Rig == null) return;
             Debug.Log("[Monke Cosmetics] Started to reset material");
-            if (Rig.isLocal)
-            {
-                currentMaterial = null;
+            currentMaterial = null;
 
-                GameObject.Find("Player Objects").transform.Find("Local VRRig/Local Gorilla Player/gorilla_new").GetComponent<SkinnedMeshRenderer>().material = Rig.materialsToChangeTo[Rig.setMatIndex];
-                Debug.Log($"[Monke Cosmetics] Succesfully reset material");
-            }
+            if (!VRRig.LocalRig.IsTagged()) localMesh.material = VRRig.LocalRig.materialsToChangeTo[VRRig.LocalRig.setMatIndex];
+            Debug.Log($"[Monke Cosmetics] Succesfully reset material");
         }
 
         public void SetMaterial(MonkeMaterial mat)

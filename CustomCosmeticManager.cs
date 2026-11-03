@@ -1,22 +1,17 @@
-﻿using BepInEx;
-using BepInEx.Bootstrap;
-using MonkeCosmetics.Cosmetic;
+﻿using MonkeCosmetics.Cosmetic;
 using MonkeCosmetics.Cosmetic.Pages;
 using MonkeCosmetics.Scripts;
-using Photon.Pun;
 using System;
 using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using System.Reflection;
 using UnityEngine;
-using Hashtable = ExitGames.Client.Photon.Hashtable;
 
 namespace MonkeCosmetics
 {
     public class CustomCosmeticManager : MonoBehaviour
     {
         public static CustomCosmeticManager instance;
+
+        public static event Action OnInit;
 
         public static List<MonkeCosmeticPage> Pages = [];
 
@@ -31,35 +26,27 @@ namespace MonkeCosmetics
             if (instance == null) instance = this;
             else Destroy(this);
 
-            StartAF();
+            AddPage(typeof(MaterialPage));
+            OnInit?.Invoke();
         }
 
-        private void StartAF()
+        public void AddPage(Type page)
         {
-            Pages.Add(ScriptableObject.CreateInstance<MaterialPage>());            
+            if (page == null) return;
+            if (!typeof(MonkeCosmeticPage).IsAssignableFrom(page)) return;
 
-            /*IEnumerable<Assembly> assemblies = Chainloader.PluginInfos.Values.Select(pluginInfo => pluginInfo.Instance.GetType().Assembly).Distinct();
-            IEnumerable<MonkeCosmeticPage> found = assemblies.SelectMany(assembly => assembly.GetTypes()).Where(foundEntry => typeof(MonkeCosmeticPage).IsAssignableFrom(foundEntry) && !foundEntry.IsInterface).Select(entryType => (MonkeCosmeticPage)Activator.CreateInstance(entryType)).Where(viewEntry => Pages.All(existingEntry => existingEntry.GetType() != viewEntry.GetType()));
-            Pages.AddRange(found);*/
+            var p = ScriptableObject.CreateInstance(page) as MonkeCosmeticPage;
 
-            foreach (var e in Pages) e.OnMonkeCosmeticsIntialised();
+            if(p == null) return;
 
-            SetPage(MaterialPage.instance);
-
-            Buttons.AddRange([Plugin.Left, Plugin.Right, Plugin.Equip]);
-
-            foreach (GameObject button in Buttons)
-            {
-                button.AddComponent<ButtonHandler>();
-                button.layer = 18;
-            }
-
+            Pages.Add(p);
+            p.OnMonkeCosmeticsIntialised();
             UpdateDisplay();
         }
 
-        private void SetPage(MaterialPage page)
+        public void SetPage(MonkeCosmeticPage page)
         {
-            CurrentPage = page; 
+            CurrentPage = page;
             page.OnPageEntered();
         }
 
@@ -98,6 +85,9 @@ namespace MonkeCosmetics
             if (Index > 0) Index--;
             else Index = Pages.Count - 1;
 
+            if (Pages[Index] != CurrentPage)
+                SetPage(Pages[Index]);
+
             UpdateDisplay();
         }
 
@@ -106,16 +96,9 @@ namespace MonkeCosmetics
             if (Index < Pages.Count - 1) Index++;
             else Index = 0;
 
-            UpdateDisplay();
-        }
-
-        public void PageSelectPress()
-        {
             if (Pages[Index] != CurrentPage)
-            {
-                CurrentPage = Pages[Index];
-                CurrentPage.OnPageEntered();
-            }
+                SetPage(Pages[Index]);
+
             UpdateDisplay();
         }
     }

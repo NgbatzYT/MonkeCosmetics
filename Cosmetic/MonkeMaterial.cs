@@ -11,8 +11,6 @@ namespace MonkeCosmetics.Cosmetic
         public string materialName;
         public string id;
         public Texture2D Thumbnail;
-
         public bool customColours;
-        public bool moddedOnly;
     }
 }

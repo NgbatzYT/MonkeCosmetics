@@ -8,22 +8,17 @@ namespace MonkeCosmetics.Cosmetic
 {
     public class MonkeCosmetic : ScriptableObject
     {
-        public GameObject parentObject;
+        public GameObject obj;
         public string cosmeticName;
         public string id;
-        public bool moddedOnly;
         public Texture2D Thumbnail;
+        public CosmeticPosition pos;
+    }
 
-        public bool customColours;
-        public Material[] materials;
-
-        public GameObject anchor;
-
-        public UnityEvent RightTriggerAction;
-        public UnityEvent LeftTriggerAction;
-        public UnityEvent RightGripAction;
-        public UnityEvent LeftGripAction;
-        public UnityEvent SecondaryAction;
-        public UnityEvent PrimaryAction;
+    public enum CosmeticPosition
+    {
+        hand,
+        head,
+        body
     }
 }

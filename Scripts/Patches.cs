@@ -11,7 +11,8 @@ namespace MonkeCosmetics.Scripts
         [HarmonyPostfix]
         public static void Postfix(VRRig __instance)
         {
-            if(MaterialPage.instance.currentMaterial && MaterialPage.initialised) MaterialPage.instance.SetMaterial(MaterialPage.instance.currentMaterial);
+            if(MaterialPage.instance.currentMaterial && MaterialPage.initialised) 
+                MaterialPage.instance.SetMaterial(MaterialPage.instance.currentMaterial);
         }
     }
     [HarmonyWrapSafe]
@@ -21,7 +22,8 @@ namespace MonkeCosmetics.Scripts
         [HarmonyPostfix]
         private static void Postfix(VRRig __instance)
         {
-            if (MaterialPage.instance.currentMaterial && MaterialPage.initialised) MaterialPage.instance.SetMaterial(MaterialPage.instance.currentMaterial);
+            if (MaterialPage.instance.currentMaterial && MaterialPage.initialised) 
+                MaterialPage.instance.SetMaterial(MaterialPage.instance.currentMaterial);
         }
     }
 }

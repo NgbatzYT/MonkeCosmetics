@@ -6,10 +6,12 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <None Remove="Assets\cosmetic.png" />
     <None Remove="Assets\material.png" />
   </ItemGroup>
 
   <ItemGroup>
+    <EmbeddedResource Include="Assets\cosmetic.png" />
     <EmbeddedResource Include="Assets\material.png" />
     <EmbeddedResource Include="Assets\monkecosmetics" />
   </ItemGroup>
