@@ -19,116 +19,127 @@ namespace MonkeCosmetics.LegacySupport
 
                 if (new string[] { ".material", ".gmat", ".gmatplus", ".mcmat" }.Contains(Path.GetExtension(path).ToLower()))
                 {
-                    if (File.Exists(path) && File.ReadAllBytes(path).Length >= 2 && File.ReadAllBytes(path)[0] == 0x50 && File.ReadAllBytes(path)[1] == 0x4B)
+                    try
                     {
-                        try
-                        {
-                            new GorillaMaterial(path);
-                            Debug.Log($"[MonkeCosmetics] Loaded Legacy Material: {Path.GetFileName(path)}");
-                        }
-                        catch (Exception ex)
-                        {
-                            Debug.LogError($"[MonkeCosmetics] Failed to load Legacy Material {path}: {ex}");
-                        }
-                    }
-                    else
-                    {
-                        if (Path.GetExtension(path).ToLower().Contains(".mcmat"))
-                        {
-                            AssetBundle b = AssetBundle.LoadFromFile(path);
+                        Debug.Log($"Starting To Load Legacy Material: {Path.GetFileName(path)}");
 
-                            var es = b.LoadAllAssets<MonkeMaterial>();
-
-                            if(es.Length > 0)
+                        if (File.Exists(path) && File.ReadAllBytes(path).Length >= 2 && File.ReadAllBytes(path)[0] == 0x50 && File.ReadAllBytes(path)[1] == 0x4B)
+                        {
+                            try
                             {
-                                foreach(MonkeMaterial meat in es)
-                                    MaterialPage.materials.Add(meat);
-
-                                b.Unload(false);
+                                new GorillaMaterial(path);
                             }
-
-
-                            var e = b.LoadAllAssets<Material>();
-
-                            foreach (Material mat in e)
+                            catch (Exception ex)
                             {
-                                MonkeMaterial matConverted = MonkeMaterial.CreateInstance<MonkeMaterial>();
-
-                                if (new string[] { "_followplayercolour", "_followplayercolor" }.Contains(mat.name.ToLower()))
-                                {
-                                    matConverted.customColours = true;
-                                }
-                                    
-                                matConverted.material = mat;
-                                matConverted.id = $"legacy{Guid.NewGuid().ToString("N")[..5].ToUpper()}.{mat.name}";
-
-                                matConverted.materialName = matConverted.material.name;
-
-                                MaterialPage.materials.Add(matConverted);
+                                Debug.LogWarning($"Failed to load Legacy Material {Path.GetFileName(path)}: {ex.Message}");
                             }
-
-                            b.Unload(false);
                         }
                         else
                         {
                             AssetBundle b = AssetBundle.LoadFromFile(path);
-                            var e = b.LoadAsset<GameObject>("material");
+                            try
+                            {
+                                var es = b.LoadAllAssets<MonkeMaterial>();
 
-                            var mat = e.GetComponent<Renderer>().material;
+                                if (es.Length > 0)
+                                {
+                                    foreach (MonkeMaterial meat in es)
+                                        MaterialPage.materials.Add(meat);
+                                }
 
-                            ConvertMaterial(mat);
+                                var e = b.LoadAllAssets<Material>();
 
-                            MonkeMaterial matConverted = MonkeMaterial.CreateInstance<MonkeMaterial>();
+                                foreach (Material mate in e)
+                                {
+                                    CreateMaterial(mate, path);
+                                }
 
-                            if (new string[] { "_followplayercolour", "_followplayercolor" }.Contains(mat.name.ToLower()))
-                                matConverted.customColours = true;
+                            }
+                            catch { /*ignore*/ }
 
-                            matConverted.material = mat;
-                            matConverted.id = $"legacy{Guid.NewGuid().ToString("N")[..5].ToUpper()}.{mat.name}";
+                            try
+                            {
+                                var ess = b.LoadAsset<GameObject>("material");
+                                var mat = ess.GetComponent<Renderer>().material;
+                                CreateMaterial(mat, path);
+                            }
+                            catch { /*ignore*/ }
 
-                            matConverted.materialName = matConverted.material.name;
-
-                            MaterialPage.materials.Add(matConverted);
+                            try
+                            {
+                                var ee = b.LoadAsset<GameObject>("_Material");
+                                var mats = ee.GetComponent<Renderer>().material;
+                                CreateMaterial(mats, path);
+                            }
+                            catch { /*ignore*/ }
 
                             b.Unload(false);
                         }
+                    }
+                    catch (Exception e)
+                    {
+                        Debug.LogWarning($"Failed to load Legacy Material {Path.GetFileName(path)}: {e.Message}");
                     }
                 }
             }
         }
 
-        public static void ConvertMaterial(Material mat)
+        public static void CreateMaterial(Material mat, string path)
         {
-            if (mat.shader.name != "Standard")
+            try
             {
-                return;
+                ConvertMaterial(mat);
+
+                MonkeMaterial matConverted = MonkeMaterial.CreateInstance<MonkeMaterial>();
+
+                if (new string[] { "_followplayercolour", "_followplayercolor" }.Contains(mat.name.ToLower()))
+                    matConverted.customColours = true;
+
+                matConverted.material = mat;
+                matConverted.id = $"legacy{Guid.NewGuid().ToString("N")[..5].ToUpper()}.{mat.name}";
+
+                matConverted.materialName = matConverted.material.name;
+
+                MaterialPage.materials.Add(matConverted);
+                Debug.Log($"Loaded Legacy Material ({matConverted.id}, {matConverted.materialName}): {Path.GetFileName(path)}");
+            }
+            catch (Exception e)
+            {
+                Debug.LogWarning($"Failed to load a material from: {Path.GetFileName(path)} | {e.Message}");
             }
 
-            Shader urpLit = Shader.Find("Universal Render Pipeline/Lit");
+        }
 
-            var mainTex = mat.mainTexture;
-            var color = mat.color;
-            var metallic = mat.GetFloat("_Metallic");
-            var smoothness = mat.GetFloat("_Glossiness");
-            var normalMap = mat.GetTexture("_BumpMap");
-            var emissionColor = mat.GetColor("_EmissionColor");
-            var emissionMap = mat.GetTexture("_EmissionMap");
-
-            mat.shader = urpLit;
-
-            mat.SetTexture("_BaseMap", mainTex);
-            mat.color = color;
-            mat.SetFloat("_Metallic", metallic);
-            mat.SetFloat("_Smoothness", smoothness);
-
-            if (normalMap)
-                mat.SetTexture("_BumpMap", normalMap);
-
-            if (emissionMap || emissionColor.maxColorComponent > 0f)
+        public static void ConvertMaterial(Material mat)
+        {
+            if (mat.shader.name == "Standard")
             {
-                mat.EnableKeyword("_EMISSION");
-                mat.SetTexture("_EmissionMap", emissionMap);
-                mat.SetColor("_EmissionColor", emissionColor);
+                Shader urpLit = Shader.Find("Universal Render Pipeline/Lit");
+
+                var mainTex = mat.mainTexture;
+                var color = mat.color;
+                var metallic = mat.GetFloat("_Metallic");
+                var smoothness = mat.GetFloat("_Glossiness");
+                var normalMap = mat.GetTexture("_BumpMap");
+                var emissionColor = mat.GetColor("_EmissionColor");
+                var emissionMap = mat.GetTexture("_EmissionMap");
+
+                mat.shader = urpLit;
+
+                mat.SetTexture("_BaseMap", mainTex);
+                mat.color = color;
+                mat.SetFloat("_Metallic", metallic);
+                mat.SetFloat("_Smoothness", smoothness);
+
+                if (normalMap)
+                    mat.SetTexture("_BumpMap", normalMap);
+
+                if (emissionMap || emissionColor.maxColorComponent > 0f)
+                {
+                    mat.EnableKeyword("_EMISSION");
+                    mat.SetTexture("_EmissionMap", emissionMap);
+                    mat.SetColor("_EmissionColor", emissionColor);
+                }
             }
         }
     }

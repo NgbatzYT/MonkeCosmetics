@@ -14,7 +14,7 @@ using UnityEngine.UI;
 
 namespace MonkeCosmetics
 {
-    [BepInPlugin("ngbatz.monkecosmetics", "Monke Cosmetics", "2.2")] // gd reference edition
+    [BepInPlugin("ngbatz.monkecosmetics", "Monke Cosmetics", "2.201")] // gd reference edition v2
     public class Plugin : BaseUnityPlugin
     {
         public static Plugin Instance { get; private set; }
@@ -42,11 +42,12 @@ namespace MonkeCosmetics
 
         public static RawImage Thumbnail;
 
-        public const int Version = 1;
+        public const int Version = 2;
 
         void Start()
         {
             Harmony.CreateAndPatchAll(GetType().Assembly, "ngbatz.monkecosmetics");
+            manualLogSource = base.Logger;
             GorillaTagger.OnPlayerSpawned(OnGameInitialized);
         }
 
@@ -155,7 +156,7 @@ namespace MonkeCosmetics
 
             if (req.result != UnityWebRequest.Result.Success)
             {
-                Debug.LogError($"[Monke Cosmetics] Failed to check for updates!");
+                Debug.LogError($"Failed to check for updates!");
                 yield break;
             }
 
@@ -170,7 +171,7 @@ namespace MonkeCosmetics
     {
         public static void Log(string msg)
         {
-            Plugin.Instance.manualLogSource.Log(msg);
+            Plugin.Instance.manualLogSource.LogInfo(msg);
         }
         public static void LogWarning(string msg)
         {

@@ -142,11 +142,11 @@ namespace MonkeCosmetics.Cosmetic.Pages
 
         public void ResetMaterial()
         {
-            Debug.Log("[Monke Cosmetics] Started to reset material");
+            Debug.Log("Started to reset material");
             currentMaterial = null;
 
             if (!VRRig.LocalRig.IsTagged()) localMesh.material = VRRig.LocalRig.materialsToChangeTo[VRRig.LocalRig.setMatIndex];
-            Debug.Log($"[Monke Cosmetics] Succesfully reset material");
+            Debug.Log($"Succesfully reset material");
         }
 
         public void SetMaterial(MonkeMaterial mat)

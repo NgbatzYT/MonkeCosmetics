@@ -1,11 +1,13 @@
 ﻿using MonkeCosmetics;
 using MonkeCosmetics.LegacySupport;
 using Newtonsoft.Json;
+using System;
 using System.IO;
 using System.IO.Compression;
 using System.Linq;
 using System.Text;
 using UnityEngine;
+using Debug = MonkeCosmetics.Debug;
 
 namespace GorillaCosmetics.Data
 {
@@ -21,46 +23,34 @@ namespace GorillaCosmetics.Data
         {
             if (path != "Default")
             {
-                try
+                PackageJSON json = null;
+                using (ZipArchive archive = ZipFile.OpenRead(path))
                 {
-                    PackageJSON json = null;
-                    using (ZipArchive archive = ZipFile.OpenRead(path))
+                    var jsonEntry = archive.Entries.First(i => i.Name == "package.json");
+                    if (jsonEntry != null)
                     {
-                        var jsonEntry = archive.Entries.First(i => i.Name == "package.json");
-                        if (jsonEntry != null)
+                        var stream = new StreamReader(jsonEntry.Open(), Encoding.Default);
+                        string jsonString = stream.ReadToEnd();
+                        json = JsonConvert.DeserializeObject<PackageJSON>(jsonString);
+                    }
+                    foreach (ZipArchiveEntry entry in archive.Entries)
+                    {
+                        if (json != null && entry.Name == json.pcFileName)
                         {
-                            var stream = new StreamReader(jsonEntry.Open(), Encoding.Default);
-                            string jsonString = stream.ReadToEnd();
-                            json = JsonConvert.DeserializeObject<PackageJSON>(jsonString);
-                        }
-                        foreach (ZipArchiveEntry entry in archive.Entries)
-                        {
-                            if (json != null && entry.Name == json.pcFileName)
-                            {
-                                var SeekableStream = new MemoryStream();
-                                entry.Open().CopyTo(SeekableStream);
-                                SeekableStream.Position = 0;
-                                AssetBundle = AssetBundle.LoadFromStream(SeekableStream);
-                            }
+                            var SeekableStream = new MemoryStream();
+                            entry.Open().CopyTo(SeekableStream);
+                            SeekableStream.Position = 0;
+                            AssetBundle = AssetBundle.LoadFromStream(SeekableStream);
                         }
                     }
-
-                    
-
-
-                    GameObject materialObject = AssetBundle.LoadAsset<GameObject>("_Material");
-                    material = materialObject.GetComponent<Renderer>().material;
-                    material.name = $"{json.descriptor.objectName}{(json.config.customColors ? "_FollowPlayerColor" : "")}";
-
-                    LegacySupport.ConvertMaterial(material);
                 }
-                catch
-                {
-                    // no error loggin!!
-                }
+
+                GameObject materialObject = AssetBundle.LoadAsset<GameObject>("_Material");
+                material = materialObject.GetComponent<Renderer>().material;
+                material.name = $"{json.descriptor.objectName}{(json.config.customColors ? "_FollowPlayerColor" : "")}";
+
+                LegacySupport.CreateMaterial(material, path);
             }
-
-            //if (material != null) CustomCosmeticManager.materials.Add(material);
         }
 
         public Material GetMaterial()
